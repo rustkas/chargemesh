@@ -108,9 +108,9 @@ ChargeMesh is organized into several layers:
 │         Station │ EVSE │ Connector │ Session │ Transaction │ Meter          │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                    PROTOCOL ADAPTER LAYER                                   │
-├────────────┬────────────┬────────────┬────────────┬───────────────────────┤
-│  OCPP 1.6  │ OCPP 2.0.1 │ OCPP 2.1  │ ISO 15118  │        OCPI           │
-└────────────┴────────────┴────────────┴────────────┴───────────────────────┘
+├────────────┬────────────┬────────────┬────────────┬─────────────────────────┤
+│  OCPP 1.6  │ OCPP 2.0.1 │ OCPP 2.1  │ ISO 15118  │        OCPI              │
+└────────────┴────────────┴────────────┴────────────┴─────────────────────────┘
 ```
 
 ---
@@ -121,20 +121,20 @@ ChargeMesh uses **Rust** as its primary language for the core platform, with Typ
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  FRONTEND           │  TypeScript / React / Next.js                        │
-│                     │  WASM (Rust → WebAssembly)                           │
+│  FRONTEND           │  TypeScript / React / Next.js                         │
+│                     │  WASM (Rust → WebAssembly)                            │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  API & COMMS        │  REST (Axum) │ gRPC (Tonic) │ WebSocket             │
+│  API & COMMS        │  REST (Axum) │ gRPC (Tonic) │ WebSocket               │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  BACKEND (Rust)     │  Tokio (async runtime)                              │
-│                     │  Serde (serialization)                              │
-│                     │  Tracing (observability)                            │
-│                     │  SQLx (database)                                    │
+│  BACKEND (Rust)     │  Tokio (async runtime)                                │ 
+│                     │  Serde (serialization)                                │
+│                     │  Tracing (observability)                              │
+│                     │  SQLx (database)                                      │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  DATA LAYER         │  PostgreSQL │ Redis │ NATS/Kafka │ Object Storage    │
+│  DATA LAYER         │  PostgreSQL │ Redis │ NATS/Kafka │ Object Storage     │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  INFRASTRUCTURE     │  Docker │ Kubernetes │ Terraform                     │
-│                     │  Prometheus │ Grafana │ ELK Stack │ Jaeger           │
+│  INFRASTRUCTURE     │  Docker │ Kubernetes │ Terraform                      │
+│                     │  Prometheus │ Grafana │ ELK Stack │ Jaeger            │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -341,40 +341,40 @@ ChargeMesh follows an open-core business model:
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         FREE / Open Source                                  │
-│  • Protocol libraries (OCPP 1.6, 2.0.1, 2.1)                               │
-│  • Universal EV Model (EV-IR)                                              │
-│  • Simulator                                                               │
-│  • Local diagnostics                                                       │
-│  • SDK (Rust, TypeScript)                                                  │
-│  • CLI + Web Inspector                                                     │
-│  • Community support                                                       │
+│  • Protocol libraries (OCPP 1.6, 2.0.1, 2.1)                                │
+│  • Universal EV Model (EV-IR)                                               │
+│  • Simulator                                                                │
+│  • Local diagnostics                                                        │
+│  • SDK (Rust, TypeScript)                                                   │
+│  • CLI + Web Inspector                                                      │
+│  • Community support                                                        │
 └─────────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           PRO ($99/mo)                                     │
-│  • Cloud monitoring                                                        │
-│  • Fleet management                                                        │
-│  • Advanced diagnostics                                                    │
-│  • Protocol trace storage (30 days)                                        │
-│  • Email/Slack alerts                                                      │
-│  • Up to 100 stations                                                      │
-│  • 10 users                                                                │
-│  • 8/5 support                                                             │
+│                           PRO ($99/mo)                                      │
+│  • Cloud monitoring                                                         │
+│  • Fleet management                                                         │
+│  • Advanced diagnostics                                                     │
+│  • Protocol trace storage (30 days)                                         │
+│  • Email/Slack alerts                                                       │
+│  • Up to 100 stations                                                       │
+│  • 10 users                                                                 │
+│  • 8/5 support                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                      ENTERPRISE ($499/mo)                                  │
-│  • Private deployment                                                      │
-│  • SLA (99.9% uptime)                                                      │
-│  • Custom integrations                                                     │
-│  • Compliance (GDPR, HIPAA)                                                │
-│  • Dedicated support                                                       │
-│  • Large fleet management (unlimited)                                      │
-│  • Unlimited users                                                         │
-│  • 24/7 support                                                            │
-│  • Custom features                                                         │
+│                      ENTERPRISE ($499/mo)                                   │
+│  • Private deployment                                                       │
+│  • SLA (99.9% uptime)                                                       │
+│  • Custom integrations                                                      │
+│  • Compliance (GDPR, HIPAA)                                                 │
+│  • Dedicated support                                                        │
+│  • Large fleet management (unlimited)                                       │
+│  • Unlimited users                                                          │
+│  • 24/7 support                                                             │
+│  • Custom features                                                          │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -553,12 +553,12 @@ ChargeMesh builds upon the work of many standards bodies and open-source project
 **ChargeMesh: Making EV charging infrastructure programmable.**
 
 ```text
-                    ┌─────────────────┐
-                    │   ChargeMesh    │
-                    │                 │
-                    │  EV Charging    │
+                    ┌──────────────────┐
+                    │   ChargeMesh     │
+                    │                  │
+                    │  EV Charging     │
                     │  Interoperability│
-                    │  for the Future │
-                    └─────────────────┘
+                    │  for the Future  │
+                    └──────────────────┘
 ```
 
