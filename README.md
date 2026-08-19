@@ -1,8 +1,3 @@
-Я доработаю `README.md` проекта **ChargeMesh**, интегрируя все ключевые концепции из нашего обсуждения: архитектуру, технологический стек, MVP-стратегию с Inspector, коммерческую модель и долгосрочное видение.
-
----
-
-```markdown
 # ChargeMesh
 
 **Universal interoperability runtime for EV charging infrastructure.**
@@ -566,4 +561,4 @@ ChargeMesh builds upon the work of many standards bodies and open-source project
                     │  for the Future │
                     └─────────────────┘
 ```
-```
+
