@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChargeMesh Inspector — Web Debugger</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>⚡ ChargeMesh Inspector</h1>
+            <p>Upload OCPP trace or connect to a live charger</p>
+        </header>
+        
+        <main>
+            <section id="input">
+                <div class="card">
+                    <h3>📂 Upload Trace File</h3>
+                    <input type="file" id="file-input" accept=".json,.ocpp,.txt,.log">
+                    <button id="upload-btn">Analyze</button>
+                </div>
+                <div class="card">
+                    <h3>🔌 Connect to Charger</h3>
+                    <input type="text" id="ws-url" placeholder="ws://charger:9000" value="ws://localhost:9000">
+                    <button id="connect-btn">Connect</button>
+                </div>
+            </section>
+            
+            <section id="report">
+                <!-- Report rendered here -->
+            </section>
+        </main>
+        
+        <footer>
+            <p>ChargeMesh Inspector v0.1.0 · <a href="https://github.com/chargemesh" target="_blank">GitHub</a></p>
+        </footer>
+    </div>
+    
+    <script type="module" src="app.js"></script>
+</body>
+</html>
