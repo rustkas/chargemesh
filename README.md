@@ -509,23 +509,21 @@ TBD — likely Apache 2.0 with Commons Clause for commercial use.
 
 ## Roadmap
 
-- [x] EV-IR specification
-- [x] OCPP 1.6 core
-- [x] Charging session state machine
-- [x] Capability model
-- [x] OCPP simulator
-- [x] Protocol trace format
-- [x] Diagnostics engine
-- [ ] OCPP 2.0.1
-- [ ] OCPI
-- [ ] ISO 15118
-- [ ] OCPP 2.1
-- [ ] Web-based Inspector
-- [ ] Cloud observability
-- [ ] Interoperability test platform
-- [ ] Energy-management integrations
-- [ ] V2G / V2X support
-- [ ] Enterprise features
+✅ EV-IR specification
+✅ OCPP 1.6 core
+✅ Charging session state machine
+✅ Capability model
+✅ OCPP simulator
+✅ Protocol trace format
+✅ Diagnostics engine
+⏳ Web-based Inspector (WASM)
+⏳ OCPP 2.0.1
+⏳ OCPI
+⏳ ISO 15118
+⏳ OCPP 2.1
+⏳ Cloud observability
+⏳ Energy-management integrations
+⏳ V2G / V2X support
 
 ---
 
