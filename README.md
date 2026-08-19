@@ -529,6 +529,28 @@ TBD — likely Apache 2.0 with Commons Clause for commercial use.
 
 ---
 
+## Technology Stack
+
+ChargeMesh uses **Rust** as its primary language for the core platform:
+
+- **Rust** — Core platform (performance, safety, WASM)
+- **TypeScript** — Web tooling
+- **PostgreSQL** — Persistent storage
+- **Redis** — Caching and state
+- **WebAssembly** — Browser-based diagnostics
+
+## Commercial Model
+
+ChargeMesh follows an open-core business model:
+
+| Tier | Features |
+|------|----------|
+| **Free** | Protocol libraries, EV-IR, Simulator, CLI |
+| **Pro** | Cloud monitoring, Fleet management, Advanced diagnostics |
+| **Enterprise** | Private deployment, SLA, Custom integrations |
+
+---
+
 ## Acknowledgments
 
 ChargeMesh builds upon the work of many standards bodies and open-source projects:
