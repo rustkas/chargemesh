@@ -49,7 +49,9 @@ EV charging infrastructure is built from many independent systems:
 
 Standards improve interoperability, but they do not eliminate implementation differences, protocol errors, vendor extensions, incompatible capabilities, and complex distributed-system failures.
 
-ChargeMesh is designed to provide a common software layer that hides this complexity.
+ChargeMesh is designed to provide a common software layer that hides this complexity. It answers the fundamental question:
+
+> **"Why is this charging session not working?"**
 
 ---
 
@@ -84,6 +86,8 @@ EV-IR provides common representations for:
 - Capabilities
 - Errors
 - Energy constraints
+
+This allows applications to work with any charging infrastructure without knowing the underlying protocol.
 
 ---
 
@@ -126,7 +130,7 @@ ChargeMesh uses **Rust** as its primary language for the core platform, with Typ
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  API & COMMS        │  REST (Axum) │ gRPC (Tonic) │ WebSocket               │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  BACKEND (Rust)     │  Tokio (async runtime)                                │ 
+│  BACKEND (Rust)     │  Tokio (async runtime)                                │
 │                     │  Serde (serialization)                                │
 │                     │  Tracing (observability)                              │
 │                     │  SQLx (database)                                      │
@@ -140,7 +144,7 @@ ChargeMesh uses **Rust** as its primary language for the core platform, with Typ
 
 ### Why Rust?
 
-- **Memory safety** — Eliminates entire classes of bugs
+- **Memory safety** — Eliminates entire classes of bugs at compile time
 - **Performance** — Zero-cost abstractions, near C++ performance
 - **Concurrency** — Fearless concurrency with async/await
 - **Reliability** — Type system prevents many errors at compile time
@@ -150,102 +154,48 @@ ChargeMesh uses **Rust** as its primary language for the core platform, with Typ
 
 ---
 
-## Current Goals
+## Commercial Model
 
-The initial development focuses on:
-
-- ✅ OCPP 1.6 support
-- ✅ Canonical EV-IR model
-- ✅ Charging session state machines
-- ✅ Protocol message processing
-- ✅ Capability discovery
-- ✅ Protocol logging
-- ✅ Deterministic simulation
-- ✅ Charging-session diagnostics
-- ✅ Developer tooling (CLI + Web Inspector)
-
----
-
-## Example
-
-A ChargeMesh application can work with a charging station without directly depending on its protocol implementation:
-
-```rust
-use chargemesh::prelude::*;
-
-#[tokio::main]
-async fn main() -> Result<()> {
-    let station = chargemesh::connect(Config::from_env()).await?;
-    
-    println!("{:?}", station.capabilities());
-    
-    let session = station.start_charging().await?;
-    
-    println!("Energy: {} kWh", session.energy() / 1000.0);
-    
-    station.set_power_limit(11_000).await?;
-    
-    session.stop().await?;
-    
-    Ok(())
-}
-```
-
-The application does not need to know whether the underlying device uses OCPP 1.6, OCPP 2.0.1, OCPP 2.1, or a vendor-specific implementation.
-
----
-
-## ChargeMesh Inspector
-
-**The first commercial product** — a diagnostic tool that answers the question:
-
-> **"Why is my charging session not working?"**
+ChargeMesh follows an open-core business model:
 
 ```text
-                    Charger
-                       │
-                       │ OCPP
-                       ▼
-              ┌─────────────────┐
-              │    Inspector    │
-              │                 │
-              │ Protocol Trace  │
-              │ State Machine   │
-              │ Diagnostics     │
-              │ Capabilities    │
-              └────────┬────────┘
-                       │
-                       ▼
-                 Human-readable
-                   diagnosis
-```
-
-### Killer Workflow
-
-```bash
-# Connect to a charger
-$ chargemesh inspect --connect ws://charger:9000
-
-# Or analyze a saved trace
-$ chargemesh inspect --file session-trace.ocpp
-```
-
-```text
-🔍 ROOT CAUSE
-
-ISO 15118 certificate validation failure
-Confidence: 94%
-
-Possible causes:
-1. Expired certificate (likely)
-2. Invalid trust chain
-3. Incorrect system time
-4. SECC certificate mismatch
-
-💡 Recommendations:
-• Check certificate expiry date
-• Verify trust chain
-• Synchronize system time with NTP
+┌────────────────────────────────────────────────────────────────────────────┐
+│                         FREE / Open Source                                 │
+│  • Protocol libraries (OCPP 1.6, 2.0.1, 2.1)                               │
+│  • Universal EV Model (EV-IR)                                              │
+│  • Simulator                                                               │
+│  • Local diagnostics                                                       │
+│  • SDK (Rust, TypeScript)                                                  │
+│  • CLI + Web Inspector                                                     │
+│  • Community support                                                       │
+└────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────────┐
+│                           PRO ($99/mo)                                     │
+│  • Cloud monitoring                                                        │
+│  • Fleet management                                                        │
+│  • Advanced diagnostics                                                    │
+│  • Protocol trace storage (30 days)                                        │
+│  • Email/Slack alerts                                                      │
+│  • Up to 100 stations                                                      │
+│  • 10 users                                                                │
+│  • 8/5 support                                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────────┐
+│                      ENTERPRISE ($499/mo)                                  │
+│  • Private deployment                                                      │
+│  • SLA (99.9% uptime)                                                      │
+│  • Custom integrations                                                     │
+│  • Compliance (GDPR, HIPAA)                                                │
+│  • Dedicated support                                                       │
+│  • Large fleet management (unlimited)                                      │
+│  • Unlimited users                                                         │
+│  • 24/7 support                                                            │
+│  • Custom features                                                         │
+└────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -260,21 +210,69 @@ ChargeMesh is currently in active research and development. The APIs, EV-IR mode
 
 ### MVP v0.1 Scope
 
+| Component | Status |
+|-----------|--------|
+| OCPP 1.6 (core messages) | ✅ Complete |
+| WebSocket capture | ✅ Complete |
+| EV-IR model | ✅ Complete |
+| Station/EVSE/Connector models | ✅ Complete |
+| Session state machine | ✅ Complete |
+| Protocol logger | ✅ Complete |
+| Error taxonomy (ChargeX MREC) | ✅ Complete |
+| Simulator (basic scenarios) | ✅ Complete |
+| CLI tool | ✅ Complete |
+| Basic Web debugger | ✅ Complete |
+| Human-readable diagnosis | ✅ Complete |
+| Root cause analysis (basic) | ✅ Complete |
+| Recommendations | ✅ Complete |
+
+---
+
+## Example
+
+A ChargeMesh application works with any charging station without knowing the underlying protocol:
+
+```rust
+use chargemesh::prelude::*;
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    // Connect to a charging station
+    let station = ChargeMesh::connect(StationConfig {
+        id: "CP-001".to_string(),
+        protocol: Protocol::Ocpp16,
+        endpoint: "ws://charger:9000".to_string(),
+    }).await?;
+    
+    // Discover capabilities
+    let caps = station.capabilities().await?;
+    println!("Smart Charging: {}", caps.smart_charging);
+    println!("ISO 15118: {}", caps.iso15118);
+    println!("V2G: {}", caps.v2g);
+    
+    // Start charging
+    let session = station.start_charging(StartConfig {
+        authorization: Authorization::Rfid("RFID-123".to_string()),
+        max_power: Some(22000),
+        smart_charging: true,
+    }).await?;
+    
+    // Monitor session
+    while session.is_active().await? {
+        let energy = session.energy().await?;
+        let power = session.current_power().await?;
+        println!("⚡ {} kW | {} kWh delivered", 
+            power.as_kw(), 
+            energy.as_kwh()
+        );
+        tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+    }
+    
+    Ok(())
+}
 ```
-✅ OCPP 1.6 (core messages)
-✅ WebSocket capture
-✅ EV-IR model
-✅ Station/EVSE/Connector models
-✅ Session state machine
-✅ Protocol logger
-✅ Error taxonomy (ChargeX MREC)
-✅ Simulator (basic scenarios)
-✅ CLI tool
-✅ Basic Web debugger
-✅ Human-readable diagnosis
-✅ Root cause analysis (basic)
-✅ Recommendations
-```
+
+The application does not need to know whether the underlying device uses OCPP 1.6, OCPP 2.0.1, OCPP 2.1, or a vendor-specific implementation.
 
 ---
 
@@ -283,6 +281,7 @@ ChargeMesh is currently in active research and development. The APIs, EV-IR mode
 ```text
 chargemesh/
 ├── Cargo.toml                         # Workspace root
+├── README.md                          # This file
 ├── crates/
 │   ├── chargemesh-core/               # Core types & utilities
 │   ├── chargemesh-ir/                 # EV-IR model
@@ -296,86 +295,12 @@ chargemesh/
 │   └── chargemesh-integration/        # Energy & Smart Charging
 ├── apps/
 │   ├── chargemesh-cli/                # Command-line interface
-│   └── chargemesh-inspector/          # Web-based Inspector
+│   └── chargemesh-inspector/          # Desktop Inspector
 ├── web/
 │   └── debugger/                      # Web debugger with WASM
 ├── examples/                          # Example applications
 ├── tests/                             # Integration tests
 └── docs/                              # Documentation
-```
-
----
-
-## Design Principles
-
-### Protocol Independence
-
-Applications should depend on the ChargeMesh model rather than individual charging protocols.
-
-### Capability-First Design
-
-The system should describe what a device can actually do, rather than assuming capabilities from its protocol version.
-
-### Explicit State Machines
-
-Charging infrastructure is a distributed state-machine problem. State transitions should be explicit, observable, and testable.
-
-### Diagnostics as a First-Class Capability
-
-Protocol traces, state transitions, errors, and device events should be correlated into a single charging-session timeline.
-
-### Edge-First Architecture
-
-Core protocol processing should be capable of running close to the charging infrastructure (on-site gateways, Raspberry Pi, industrial PCs).
-
-### Open Source Core
-
-The fundamental interoperability layer remains open source. Commercial value is added through cloud services, advanced diagnostics, and enterprise features.
-
----
-
-## Commercial Model
-
-ChargeMesh follows an open-core business model:
-
-```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         FREE / Open Source                                  │
-│  • Protocol libraries (OCPP 1.6, 2.0.1, 2.1)                                │
-│  • Universal EV Model (EV-IR)                                               │
-│  • Simulator                                                                │
-│  • Local diagnostics                                                        │
-│  • SDK (Rust, TypeScript)                                                   │
-│  • CLI + Web Inspector                                                      │
-│  • Community support                                                        │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           PRO ($99/mo)                                      │
-│  • Cloud monitoring                                                         │
-│  • Fleet management                                                         │
-│  • Advanced diagnostics                                                     │
-│  • Protocol trace storage (30 days)                                         │
-│  • Email/Slack alerts                                                       │
-│  • Up to 100 stations                                                       │
-│  • 10 users                                                                 │
-│  • 8/5 support                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                      ENTERPRISE ($499/mo)                                   │
-│  • Private deployment                                                       │
-│  • SLA (99.9% uptime)                                                       │
-│  • Custom integrations                                                      │
-│  • Compliance (GDPR, HIPAA)                                                 │
-│  • Dedicated support                                                        │
-│  • Large fleet management (unlimited)                                       │
-│  • Unlimited users                                                          │
-│  • 24/7 support                                                             │
-│  • Custom features                                                          │
-└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -438,6 +363,46 @@ docker run --rm chargemesh inspect --connect ws://charger:9000
 
 ---
 
+## Design Principles
+
+### Protocol Independence
+
+Applications should depend on the ChargeMesh model rather than individual charging protocols.
+
+### Capability-First Design
+
+The system should describe what a device can actually do, rather than assuming capabilities from its protocol version.
+
+### Explicit State Machines
+
+Charging infrastructure is a distributed state-machine problem. State transitions should be explicit, observable, and testable.
+
+### Diagnostics as a First-Class Capability
+
+Protocol traces, state transitions, errors, and device events should be correlated into a single charging-session timeline.
+
+### Observability by Design
+
+Every component should expose metrics, logs, and traces. Nothing should be a black box.
+
+### Edge-First Architecture
+
+Core protocol processing should be capable of running close to the charging infrastructure (on-site gateways, Raspberry Pi, industrial PCs).
+
+### Testability
+
+The simulator should allow testing without physical equipment. Every scenario should be reproducible.
+
+### Developer Experience
+
+CLI and Web debugger should make troubleshooting intuitive. The learning curve should be gentle.
+
+### Open Source Core
+
+The fundamental interoperability layer remains open source. Commercial value is added through cloud services, advanced diagnostics, and enterprise features.
+
+---
+
 ## Long-Term Vision
 
 ChargeMesh aims to become a common software infrastructure layer for EV charging interoperability:
@@ -471,7 +436,29 @@ ChargeMesh aims to become a common software infrastructure layer for EV charging
                                    Grid
 ```
 
-The long-term objective is to make EV charging infrastructure programmable through a common runtime rather than through dozens of protocol- and vendor-specific integrations.
+**The long-term objective is to make EV charging infrastructure programmable through a common runtime rather than through dozens of protocol- and vendor-specific integrations.**
+
+---
+
+## Roadmap
+
+| Phase | Component | Status |
+|-------|-----------|--------|
+| 1 | EV-IR specification | ✅ Complete |
+| 1 | OCPP 1.6 core | ✅ Complete |
+| 1 | Charging session state machine | ✅ Complete |
+| 1 | Capability model | ✅ Complete |
+| 1 | OCPP simulator | ✅ Complete |
+| 1 | Protocol trace format | ✅ Complete |
+| 1 | Diagnostics engine | ✅ Complete |
+| 2 | Web-based Inspector (WASM) | 🚧 In Progress |
+| 2 | OCPP 2.0.1 | 📋 Planned |
+| 3 | OCPI | 📋 Planned |
+| 3 | ISO 15118 | 📋 Planned |
+| 3 | OCPP 2.1 | 📋 Planned |
+| 4 | Cloud observability | 📋 Planned |
+| 4 | Energy-management integrations | 📋 Planned |
+| 4 | V2G / V2X support | 📋 Planned |
 
 ---
 
@@ -507,48 +494,6 @@ TBD — likely Apache 2.0 with Commons Clause for commercial use.
 
 ---
 
-## Roadmap
-
-✅ EV-IR specification
-✅ OCPP 1.6 core
-✅ Charging session state machine
-✅ Capability model
-✅ OCPP simulator
-✅ Protocol trace format
-✅ Diagnostics engine
-⏳ Web-based Inspector (WASM)
-⏳ OCPP 2.0.1
-⏳ OCPI
-⏳ ISO 15118
-⏳ OCPP 2.1
-⏳ Cloud observability
-⏳ Energy-management integrations
-⏳ V2G / V2X support
-
----
-
-## Technology Stack
-
-ChargeMesh uses **Rust** as its primary language for the core platform:
-
-- **Rust** — Core platform (performance, safety, WASM)
-- **TypeScript** — Web tooling
-- **PostgreSQL** — Persistent storage
-- **Redis** — Caching and state
-- **WebAssembly** — Browser-based diagnostics
-
-## Commercial Model
-
-ChargeMesh follows an open-core business model:
-
-| Tier | Features |
-|------|----------|
-| **Free** | Protocol libraries, EV-IR, Simulator, CLI |
-| **Pro** | Cloud monitoring, Fleet management, Advanced diagnostics |
-| **Enterprise** | Private deployment, SLA, Custom integrations |
-
----
-
 ## Acknowledgments
 
 ChargeMesh builds upon the work of many standards bodies and open-source projects:
@@ -566,7 +511,7 @@ ChargeMesh builds upon the work of many standards bodies and open-source project
 
 - **GitHub Issues**: For bugs and feature requests
 - **Discussions**: For questions and community support
-- **Email**: [่่java1cprog@gmail.com](mailto:java1cprog@gmail.com)
+- **Email**: [team@chargemesh.io](mailto:team@chargemesh.io)
 
 ---
 
@@ -581,4 +526,3 @@ ChargeMesh builds upon the work of many standards bodies and open-source project
                     │  for the Future  │
                     └──────────────────┘
 ```
-
