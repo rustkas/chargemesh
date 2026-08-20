@@ -1,0 +1,19 @@
+[package]
+name = "chargemesh-core"
+version = "0.1.0"
+edition = "2021"
+authors = ["ChargeMesh Team"]
+description = "Core types and utilities for ChargeMesh"
+license = "Apache-2.0"
+repository = "https://github.com/rustkas/chargemesh"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+thiserror = { workspace = true }
+derive_more = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = "1.0"

@@ -1,6 +1,10 @@
 [workspace]
 members = [
-    # Будут добавлены позже по мере реализации фаз
+    "crates/chargemesh-core",
+    # Будут добавлены позже:
+    # "crates/chargemesh-ir",
+    # "crates/chargemesh-ocpp",
+    # ...
 ]
 
 [workspace.dependencies]
@@ -15,6 +19,7 @@ thiserror = "1.0"
 async-trait = "0.1"
 tracing = "0.1"
 tracing-subscriber = "0.3"
+derive_more = { version = "0.99", features = ["display", "from"] }
 
 [profile.release]
 lto = true

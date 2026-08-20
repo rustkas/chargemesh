@@ -70,24 +70,82 @@ OCPI ─────────┤
 Vendor APIs ──┘
 ```
 
-EV-IR provides common representations for:
+### EV-IR Entity Model
 
-- Charging stations
-- EVSEs
-- Connectors
-- Vehicles
-- Charging sessions
-- Transactions
-- Meter values
-- Tariffs
-- Authorization
-- Reservations
-- Charging profiles
-- Capabilities
-- Errors
-- Energy constraints
+```text
+┌────────────────────────────────────────────────────────┐
+│                    ChargingNetwork                     │
+│  + id: string                                          │
+│  + name: string                                        │
+│  + stations: ChargingStation[]                         │
+│  + capabilities: Capabilities                          │
+└───────────────────┬────────────────────────────────────┘
+                    │
+                    ▼
+┌────────────────────────────────────────────────────────┐
+│                    ChargingStation                     │
+│  + id: StationId                                       │
+│  + vendor: string                                      │
+│  + model: string                                       │
+│  + firmwareVersion: string                             │
+│  + evses: EVSE[]                                       │
+│  + capabilities: Capabilities                          │
+│  + state: StationState                                 │
+└───────────────────┬────────────────────────────────────┘
+                    │
+                    ▼
+┌────────────────────────────────────────────────────────┐
+│                    EVSE                                │
+│  + id: EvseId                                          │
+│  + connectors: Connector[]                             │
+│  + maxPower: Power                                     │
+│  + state: EVSEState                                    │
+└───────────────────┬────────────────────────────────────┘
+                    │
+                    ▼
+┌────────────────────────────────────────────────────────┐
+│                  Connector                             │
+│  + id: ConnectorId                                     │
+│  + type: ConnectorType                                 │
+│  + state: ConnectorState                               │
+│  + currentSession?: ChargingSession                    │
+│  + maxPower: Power                                     │
+└───────────────────┬────────────────────────────────────┘
+                    │
+                    ▼
+┌────────────────────────────────────────────────────────┐
+│                   ChargingSession                      │
+│  + id: SessionId                                       │
+│  + stationId: StationId                                │
+│  + evseId: EvseId                                      │
+│  + connectorId: ConnectorId                            │
+│  + state: SessionState                                 │
+│  + startTime: Timestamp                                │
+│  + endTime?: Timestamp                                 │
+│  + energyConsumed: Energy                              │
+└────────────────────────────────────────────────────────┘
+```
 
-This allows applications to work with any charging infrastructure without knowing the underlying protocol.
+### Supported Entities
+
+| Entity             | Description                                       |
+| ------------------ | ------------------------------------------------- |
+| `ChargingNetwork`  | A network of charging stations (CPO fleet)        |
+| `ChargingStation`  | Physical charging station (OCPP charge point)     |
+| `EVSE`             | Electric Vehicle Supply Equipment (charging unit) |
+| `Connector`        | Physical connector/plug (Type2, CCS, CHAdeMO)     |
+| `Vehicle`          | Electric vehicle with battery and capabilities    |
+| `ChargingSession`  | Charging transaction from start to stop           |
+| `Transaction`      | Billing record with energy and cost               |
+| `MeterValue`       | Energy measurement reading                        |
+| `Tariff`           | Pricing model (flat, time-of-day, tiered)         |
+| `Authorization`    | User/vehicle authentication                       |
+| `Reservation`      | Connector reservation                             |
+| `ChargingProfile`  | Smart charging schedule                           |
+| `Capability`       | Supported features                                |
+| `ChargingError`    | Normalized error (ChargeX MREC)                   |
+| `Firmware`         | Firmware version and update status                |
+| `EnergyConstraint` | Grid and energy limitations                       |
 
 ---
 
@@ -124,22 +182,22 @@ ChargeMesh is organized into several layers:
 ChargeMesh uses **Rust** as its primary language for the core platform, with TypeScript for web-based tooling.
 
 ```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  FRONTEND           │  TypeScript / React / Next.js                         │
-│                     │  WASM (Rust → WebAssembly)                            │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  API & COMMS        │  REST (Axum) │ gRPC (Tonic) │ WebSocket               │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  BACKEND (Rust)     │  Tokio (async runtime)                                │
-│                     │  Serde (serialization)                                │
-│                     │  Tracing (observability)                              │
-│                     │  SQLx (database)                                      │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  DATA LAYER         │  PostgreSQL │ Redis │ NATS/Kafka │ Object Storage     │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  INFRASTRUCTURE     │  Docker │ Kubernetes │ Terraform                      │
-│                     │  Prometheus │ Grafana │ ELK Stack │ Jaeger            │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────┐
+│  FRONTEND           │  TypeScript / React / Next.js                       │
+│                     │  WASM (Rust → WebAssembly)                          │
+├───────────────────────────────────────────────────────────────────────────┤
+│  API & COMMS        │  REST (Axum) │ gRPC (Tonic) │ WebSocket             │
+├───────────────────────────────────────────────────────────────────────────┤
+│  BACKEND (Rust)     │  Tokio (async runtime)                              │
+│                     │  Serde (serialization)                              │
+│                     │  Tracing (observability)                            │
+│                     │  SQLx (database)                                    │
+├───────────────────────────────────────────────────────────────────────────┤
+│  DATA LAYER         │  PostgreSQL │ Redis │ NATS/Kafka │ Object Storage   │
+├───────────────────────────────────────────────────────────────────────────┤
+│  INFRASTRUCTURE     │  Docker │ Kubernetes │ Terraform                    │
+│                     │  Prometheus │ Grafana │ ELK Stack │ Jaeger          │
+└───────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Why Rust?
@@ -202,29 +260,50 @@ ChargeMesh follows an open-core business model:
 
 ## Project Status
 
-> **Early development — MVP in progress**
+> **Early development — Phase 1 Complete**
 
 ChargeMesh is currently in active research and development. The APIs, EV-IR model, protocol adapters, and architecture are expected to evolve significantly.
 
 **Do not use the current versions for production charging infrastructure.**
 
+### Progress
+
+| Phase  | Component                                    | Status          |
+| ------ | -------------------------------------------- | --------------- |
+| P0     | Research & Specification                     | ✅ Complete     |
+| P0     | Architecture documentation                   | ✅ Complete     |
+| P0     | EV-IR specification                          | ✅ Complete     |
+| P0     | Protocol model                               | ✅ Complete     |
+| P0     | Capabilities model                           | ✅ Complete     |
+| P0     | State machines specification                 | ✅ Complete     |
+| P0     | Error taxonomy (ChargeX MREC)                | ✅ Complete     |
+| **P1** | **Universal EV Model**                       | ✅ **Complete** |
+| P1     | Core types (Power, Energy, Duration, etc.)   | ✅ Complete     |
+| P1     | EV-IR entities (16 entities)                 | ✅ Complete     |
+| P1     | State machines (Session, Station, Connector) | ✅ Complete     |
+| P1     | Unit tests                                   | ✅ Complete     |
+| P2     | OCPP 1.6                                     | 🚧 In Progress  |
+| P2     | WebSocket capture                            | 📋 Planned      |
+| P2     | Protocol logger                              | 📋 Planned      |
+| P2     | CLI tool                                     | 📋 Planned      |
+| P3     | Capability Engine                            | 📋 Planned      |
+| P3     | Diagnostics Engine                           | 📋 Planned      |
+| P4     | Simulator                                    | 📋 Planned      |
+| P5     | Web Debugger (WASM)                          | 📋 Planned      |
+
 ### MVP v0.1 Scope
 
-| Component | Status |
-|-----------|--------|
-| OCPP 1.6 (core messages) | ✅ Complete |
-| WebSocket capture | ✅ Complete |
-| EV-IR model | ✅ Complete |
-| Station/EVSE/Connector models | ✅ Complete |
-| Session state machine | ✅ Complete |
-| Protocol logger | ✅ Complete |
-| Error taxonomy (ChargeX MREC) | ✅ Complete |
-| Simulator (basic scenarios) | ✅ Complete |
-| CLI tool | ✅ Complete |
-| Basic Web debugger | ✅ Complete |
-| Human-readable diagnosis | ✅ Complete |
-| Root cause analysis (basic) | ✅ Complete |
-| Recommendations | ✅ Complete |
+| Component                                    | Status         |
+| -------------------------------------------- | -------------- |
+| Core types (Power, Energy, Duration, etc.)   | ✅ Complete    |
+| EV-IR model (16 entities)                    | ✅ Complete    |
+| State machines (Session, Station, Connector) | ✅ Complete    |
+| OCPP 1.6 (core messages)                     | 🚧 In Progress |
+| WebSocket capture                            | 📋 Planned     |
+| Protocol logger                              | 📋 Planned     |
+| CLI tool                                     | 📋 Planned     |
+| Basic Web debugger                           | 📋 Planned     |
+| Human-readable diagnosis                     | 📋 Planned     |
 
 ---
 
@@ -233,41 +312,57 @@ ChargeMesh is currently in active research and development. The APIs, EV-IR mode
 A ChargeMesh application works with any charging station without knowing the underlying protocol:
 
 ```rust
-use chargemesh::prelude::*;
+use chargemesh_ir::prelude::*;
+use chargemesh_core::*;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Connect to a charging station
-    let station = ChargeMesh::connect(StationConfig {
-        id: "CP-001".to_string(),
-        protocol: Protocol::Ocpp16,
-        endpoint: "ws://charger:9000".to_string(),
-    }).await?;
-    
-    // Discover capabilities
-    let caps = station.capabilities().await?;
-    println!("Smart Charging: {}", caps.smart_charging);
-    println!("ISO 15118: {}", caps.iso15118);
-    println!("V2G: {}", caps.v2g);
-    
-    // Start charging
-    let session = station.start_charging(StartConfig {
-        authorization: Authorization::Rfid("RFID-123".to_string()),
-        max_power: Some(22000),
-        smart_charging: true,
-    }).await?;
-    
-    // Monitor session
-    while session.is_active().await? {
-        let energy = session.energy().await?;
-        let power = session.current_power().await?;
-        println!("⚡ {} kW | {} kWh delivered", 
-            power.as_kw(), 
-            energy.as_kwh()
-        );
-        tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
-    }
-    
+    // Create a charging station
+    let mut station = ChargingStation::new(
+        StationId::new("CP-001"),
+        "ABB".to_string(),
+        "Terra 54".to_string(),
+    );
+
+    // Add EVSE and connector
+    let mut evse = EVSE::new(
+        EvseId::new("EVSE-1"),
+        StationId::new("CP-001"),
+        Power::new(50000),
+    );
+
+    let connector = Connector::new(
+        ConnectorId::new("CONN-1"),
+        EvseId::new("EVSE-1"),
+        ConnectorType::CCS,
+        Power::new(50000),
+    );
+    evse.add_connector(connector);
+    station.add_evse(evse);
+
+    // Start a charging session
+    let mut session = ChargingSession::new(
+        StationId::new("CP-001"),
+        EvseId::new("EVSE-1"),
+        ConnectorId::new("CONN-1"),
+    );
+
+    // Use state machine
+    let mut sm = SessionStateMachine::new();
+    sm.start_authorization()?;
+    sm.authorize()?;
+    sm.start_charging()?;
+
+    // Update session state
+    session.transition_to(SessionState::Charging)?;
+
+    // Add meter reading
+    let meter = MeterValue::new(Energy::new(1000));
+    session.add_meter_reading(meter);
+
+    println!("Session ID: {}", session.id);
+    println!("State: {:?}", session.state);
+
     Ok(())
 }
 ```
@@ -280,27 +375,62 @@ The application does not need to know whether the underlying device uses OCPP 1.
 
 ```text
 chargemesh/
-├── Cargo.toml                         # Workspace root
-├── README.md                          # This file
+├── Cargo.toml                                 # Workspace root
+├── README.md                                  # This file
+├── LICENSE                                    # License
+├── docs/                                      # Documentation
+│   ├── architecture.md                        # Architecture overview
+│   ├── ev-ir.md                               # EV-IR specification
+│   ├── protocol-model.md                      # Protocol model
+│   ├── capabilities.md                        # Capabilities model
+│   ├── state-machines.md                      # State machines
+│   └── error-taxonomy.md                      # Error taxonomy (ChargeX MREC)
 ├── crates/
-│   ├── chargemesh-core/               # Core types & utilities
-│   ├── chargemesh-ir/                 # EV-IR model
-│   ├── chargemesh-ocpp/               # OCPP 1.6, 2.0.1, 2.1
-│   ├── chargemesh-ocpi/               # OCPI integration
-│   ├── chargemesh-iso15118/           # ISO 15118 / V2G
-│   ├── chargemesh-capability/         # Capability engine
-│   ├── chargemesh-diagnostics/        # Diagnostics engine
-│   ├── chargemesh-observability/      # Observability platform
-│   ├── chargemesh-simulator/          # Full simulator
-│   └── chargemesh-integration/        # Energy & Smart Charging
-├── apps/
-│   ├── chargemesh-cli/                # Command-line interface
-│   └── chargemesh-inspector/          # Desktop Inspector
-├── web/
-│   └── debugger/                      # Web debugger with WASM
-├── examples/                          # Example applications
-├── tests/                             # Integration tests
-└── docs/                              # Documentation
+│   ├── chargemesh-core/                       # Core types & utilities
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       ├── lib.rs
+│   │       ├── types.rs                       # Power, Energy, Duration, etc.
+│   │       ├── error.rs                       # CoreError, CoreResult
+│   │       ├── ident.rs                       # Id, StationId, EvseId, etc.
+│   │       ├── time.rs                        # Timestamp, TimeRange
+│   │       ├── crypto.rs                      # SHA256Hash, generate_token
+│   │       └── config.rs                      # Configuration utilities
+│   │
+│   └── chargemesh-ir/                         # EV-IR model
+│       ├── Cargo.toml
+│       └── src/
+│           ├── lib.rs
+│           ├── network.rs                     # ChargingNetwork
+│           ├── station.rs                     # ChargingStation
+│           ├── evse.rs                        # EVSE
+│           ├── connector.rs                   # Connector
+│           ├── vehicle.rs                     # Vehicle
+│           ├── session.rs                     # ChargingSession
+│           ├── transaction.rs                 # Transaction
+│           ├── meter.rs                       # Meter, MeterValue
+│           ├── tariff.rs                      # Tariff
+│           ├── authorization.rs               # Authorization
+│           ├── reservation.rs                 # Reservation
+│           ├── profile.rs                     # ChargingProfile
+│           ├── capability.rs                  # Capabilities
+│           ├── error.rs                       # ChargingError (ChargeX)
+│           ├── firmware.rs                    # Firmware
+│           ├── energy.rs                      # EnergyConstraint
+│           └── state_machine/                 # State machines
+│               ├── mod.rs
+│               ├── session.rs                 # SessionStateMachine
+│               ├── station.rs                 # StationStateMachine
+│               └── connector.rs               # ConnectorStateMachine
+├── tests/
+│   ├── unit/
+│   │   └── core_tests.rs                      # Core types tests
+│   └── integration/
+│       └── ir_tests.rs                        # EV-IR integration tests
+├── apps/                                      # Applications (Phase 2+)
+│   └── chargemesh-cli/                        # CLI (planned)
+└── web/                                       # Web tools (Phase 5+)
+    └── debugger/                              # Web debugger (planned)
 ```
 
 ---
@@ -312,15 +442,12 @@ chargemesh/
 - Rust stable toolchain (1.70+)
 - Cargo
 - Git
-- Node.js 18+ (for web tooling)
-- PostgreSQL 15+ (optional, for cloud features)
-- Redis 7+ (optional, for caching)
 
 ### Quick Start
 
 ```bash
 # Clone the repository
-git clone https://github.com/chargemesh/chargemesh.git
+git clone https://github.com/rustkas/chargemesh.git
 cd chargemesh
 
 # Build all crates
@@ -329,36 +456,19 @@ cargo build --workspace
 # Run tests
 cargo test --workspace
 
-# Install the CLI
-cargo install --path apps/chargemesh-cli
-
-# Try it out
-chargemesh inspect --help
+# Run specific tests
+cargo test -p chargemesh-ir
+cargo test -p chargemesh-core
 ```
 
-### Web Debugger
+### Project Structure
 
 ```bash
-# Build WASM module
-wasm-pack build --target web crates/chargemesh-wasm
+# View project structure
+tree -L 3
 
-# Build web debugger
-cd web/debugger
-npm install
-npm run build
-
-# Serve locally
-npm run serve
-```
-
-### Docker
-
-```bash
-# Build the Docker image
-docker build -t chargemesh .
-
-# Run the inspector
-docker run --rm chargemesh inspect --connect ws://charger:9000
+# Build documentation
+cargo doc --workspace --open
 ```
 
 ---
@@ -442,23 +552,19 @@ ChargeMesh aims to become a common software infrastructure layer for EV charging
 
 ## Roadmap
 
-| Phase | Component | Status |
-|-------|-----------|--------|
-| 1 | EV-IR specification | ✅ Complete |
-| 1 | OCPP 1.6 core | ✅ Complete |
-| 1 | Charging session state machine | ✅ Complete |
-| 1 | Capability model | ✅ Complete |
-| 1 | OCPP simulator | ✅ Complete |
-| 1 | Protocol trace format | ✅ Complete |
-| 1 | Diagnostics engine | ✅ Complete |
-| 2 | Web-based Inspector (WASM) | 🚧 In Progress |
-| 2 | OCPP 2.0.1 | 📋 Planned |
-| 3 | OCPI | 📋 Planned |
-| 3 | ISO 15118 | 📋 Planned |
-| 3 | OCPP 2.1 | 📋 Planned |
-| 4 | Cloud observability | 📋 Planned |
-| 4 | Energy-management integrations | 📋 Planned |
-| 4 | V2G / V2X support | 📋 Planned |
+| Phase  | Component                  | Status         |
+| ------ | -------------------------- | -------------- |
+| **P0** | Research & Specification   | ✅ Complete    |
+| **P1** | Universal EV Model (EV-IR) | ✅ Complete    |
+| P2     | OCPP 1.6 Core              | 🚧 In Progress |
+| P2     | OCPP Simulator             | 📋 Planned     |
+| P2     | CLI Tool                   | 📋 Planned     |
+| P3     | Capability Engine          | 📋 Planned     |
+| P3     | Diagnostics Engine         | 📋 Planned     |
+| P4     | Observability Platform     | 📋 Planned     |
+| P5     | Web Debugger (WASM)        | 📋 Planned     |
+| P6     | OCPI + Energy Integration  | 📋 Planned     |
+| P7     | Cloud Platform             | 📋 Planned     |
 
 ---
 
@@ -478,7 +584,7 @@ Please open an issue before implementing a major architectural change.
 
 ### Areas Needing Help
 
-- Protocol implementations (OCPP 2.0.1, 2.1, ISO 15118)
+- OCPP implementations (1.6, 2.0.1, 2.1)
 - Additional vendor profiles
 - Simulator scenarios
 - Diagnostics rules
@@ -518,11 +624,38 @@ ChargeMesh builds upon the work of many standards bodies and open-source project
 **ChargeMesh: Making EV charging infrastructure programmable.**
 
 ```text
-                    ┌──────────────────┐
-                    │   ChargeMesh     │
-                    │                  │
-                    │  EV Charging     │
-                    │  Interoperability│
-                    │  for the Future  │
-                    └──────────────────┘
+                    ┌─────────────────┐
+                    │   ChargeMesh    │
+                    │                 │
+                    │  EV Charging    │
+                    │ Interoperability│
+                    │  for the Future │
+                    └─────────────────┘
+```
+
+---
+
+## Summary of Phase 1
+
+### What was implemented:
+
+| Component                                                                  | Status      |
+| -------------------------------------------------------------------------- | ----------- |
+| `chargemesh-core` crate                                                    | ✅ Complete |
+| Core types (Power, Energy, Duration, Temperature, Percentage, Money)       | ✅ Complete |
+| Identifiers (Id, StationId, EvseId, ConnectorId, SessionId, TransactionId) | ✅ Complete |
+| Error handling (CoreError, CoreResult)                                     | ✅ Complete |
+| Time utilities (Timestamp, TimeRange)                                      | ✅ Complete |
+| Crypto utilities (SHA256Hash, generate_token)                              | ✅ Complete |
+| `chargemesh-ir` crate                                                      | ✅ Complete |
+| 16 EV-IR entities                                                          | ✅ Complete |
+| State machines (Session, Station, Connector)                               | ✅ Complete |
+| Unit tests                                                                 | ✅ Complete |
+| Integration tests                                                          | ✅ Complete |
+| Documentation (docs/)                                                      | ✅ Complete |
+| README.md                                                                  | ✅ Updated  |
+
+```
+
+**Phase 1 is now fully complete!** 🚀
 ```
