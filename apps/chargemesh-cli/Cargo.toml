@@ -1,0 +1,19 @@
+[package]
+name = "chargemesh-cli"
+version = "0.1.0"
+edition = "2021"
+authors = ["ChargeMesh Team"]
+description = "ChargeMesh Command-Line Interface"
+
+[dependencies]
+chargemesh-core = { path = "../../crates/chargemesh-core" }
+chargemesh-ir = { path = "../../crates/chargemesh-ir" }
+chargemesh-ocpp = { path = "../../crates/chargemesh-ocpp" }
+
+clap = { workspace = true }
+colored = { workspace = true }
+tokio = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+chrono = { workspace = true }

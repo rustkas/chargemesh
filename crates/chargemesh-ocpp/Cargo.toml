@@ -1,0 +1,35 @@
+[package]
+name = "chargemesh-ocpp"
+version = "0.1.0"
+edition = "2021"
+authors = ["ChargeMesh Team"]
+description = "OCPP 1.6, 2.0.1, and 2.1 implementation for ChargeMesh"
+license = "Apache-2.0"
+repository = "https://github.com/rustkas/chargemesh"
+
+[dependencies]
+chargemesh-core = { path = "../chargemesh-core" }
+chargemesh-ir = { path = "../chargemesh-ir" }
+
+# WebSocket
+tokio-tungstenite = { workspace = true }
+futures-util = { workspace = true }
+tokio = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_repr = { workspace = true }
+serde_yaml = { workspace = true }
+
+# Utilities
+chrono = { workspace = true }
+uuid = { workspace = true }
+thiserror = { workspace = true }
+derive_more = { workspace = true }
+async-trait = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = "1.0"
+tokio-test = "0.4"

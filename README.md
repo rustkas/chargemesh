@@ -128,24 +128,24 @@ Vendor APIs ──┘
 
 ### Supported Entities
 
-| Entity             | Description                                       |
-| ------------------ | ------------------------------------------------- |
-| `ChargingNetwork`  | A network of charging stations (CPO fleet)        |
-| `ChargingStation`  | Physical charging station (OCPP charge point)     |
-| `EVSE`             | Electric Vehicle Supply Equipment (charging unit) |
-| `Connector`        | Physical connector/plug (Type2, CCS, CHAdeMO)     |
-| `Vehicle`          | Electric vehicle with battery and capabilities    |
-| `ChargingSession`  | Charging transaction from start to stop           |
-| `Transaction`      | Billing record with energy and cost               |
-| `MeterValue`       | Energy measurement reading                        |
-| `Tariff`           | Pricing model (flat, time-of-day, tiered)         |
-| `Authorization`    | User/vehicle authentication                       |
-| `Reservation`      | Connector reservation                             |
-| `ChargingProfile`  | Smart charging schedule                           |
-| `Capability`       | Supported features                                |
-| `ChargingError`    | Normalized error (ChargeX MREC)                   |
-| `Firmware`         | Firmware version and update status                |
-| `EnergyConstraint` | Grid and energy limitations                       |
+| Entity | Description |
+|--------|-------------|
+| `ChargingNetwork` | A network of charging stations (CPO fleet) |
+| `ChargingStation` | Physical charging station (OCPP charge point) |
+| `EVSE` | Electric Vehicle Supply Equipment (charging unit) |
+| `Connector` | Physical connector/plug (Type2, CCS, CHAdeMO) |
+| `Vehicle` | Electric vehicle with battery and capabilities |
+| `ChargingSession` | Charging transaction from start to stop |
+| `Transaction` | Billing record with energy and cost |
+| `MeterValue` | Energy measurement reading |
+| `Tariff` | Pricing model (flat, time-of-day, tiered) |
+| `Authorization` | User/vehicle authentication |
+| `Reservation` | Connector reservation |
+| `ChargingProfile` | Smart charging schedule |
+| `Capabilities` | Supported features |
+| `ChargingError` | Normalized error (ChargeX MREC) |
+| `Firmware` | Firmware version and update status |
+| `EnergyConstraint` | Grid and energy limitations |
 
 ---
 
@@ -179,36 +179,65 @@ ChargeMesh is organized into several layers:
 
 ## Technology Stack
 
-ChargeMesh uses **Rust** as its primary language for the core platform, with TypeScript for web-based tooling.
+ChargeMesh uses **Rust** as its primary language for the core platform, with **Emerge Core** providing the reactive foundation for web tooling.
+
+### Core Platform (Rust)
 
 ```text
-┌───────────────────────────────────────────────────────────────────────────┐
-│  FRONTEND           │  TypeScript / React / Next.js                       │
-│                     │  WASM (Rust → WebAssembly)                          │
-├───────────────────────────────────────────────────────────────────────────┤
-│  API & COMMS        │  REST (Axum) │ gRPC (Tonic) │ WebSocket             │
-├───────────────────────────────────────────────────────────────────────────┤
-│  BACKEND (Rust)     │  Tokio (async runtime)                              │
-│                     │  Serde (serialization)                              │
-│                     │  Tracing (observability)                            │
-│                     │  SQLx (database)                                    │
-├───────────────────────────────────────────────────────────────────────────┤
-│  DATA LAYER         │  PostgreSQL │ Redis │ NATS/Kafka │ Object Storage   │
-├───────────────────────────────────────────────────────────────────────────┤
-│  INFRASTRUCTURE     │  Docker │ Kubernetes │ Terraform                    │
-│                     │  Prometheus │ Grafana │ ELK Stack │ Jaeger          │
-└───────────────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────┐
+│  BACKEND (Rust)               │  Tokio (async runtime)                     │
+│                               │  Serde (serialization)                     │
+│                               │  Tracing (observability)                   │
+│                               │  SQLx (database)                           │
+├────────────────────────────────────────────────────────────────────────────┤
+│  PROTOCOLS                    │  OCPP 1.6, 2.0.1, 2.1                      │
+│                               │  ISO 15118 / V2G                           │
+│                               │  OCPI (roaming)                            │
+├────────────────────────────────────────────────────────────────────────────┤
+│  DATA LAYER                   │  PostgreSQL │ Redis │ NATS/Kafka           │
+├────────────────────────────────────────────────────────────────────────────┤
+│  INFRASTRUCTURE               │  Docker │ Kubernetes │ Terraform           │
+│                               │  Prometheus │ Grafana │ ELK Stack          │
+└────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Why Rust?
+### Web Frontend (Emerge Core)
 
-- **Memory safety** — Eliminates entire classes of bugs at compile time
-- **Performance** — Zero-cost abstractions, near C++ performance
-- **Concurrency** — Fearless concurrency with async/await
-- **Reliability** — Type system prevents many errors at compile time
-- **WASM** — First-class support for web-based tooling
-- **Edge deployment** — Can run on Raspberry Pi and industrial controllers
-- **Interoperability** — C-FFI, WASM, Node.js integration
+We use **`@emerge/core`** as the minimal reactive foundation:
+
+```text
+┌────────────────────────────────────────────────────────────────────────────┐
+│  FRONTEND (Emerge Core)        │  @emerge/core (signals, computed, effects)│
+│                               │  • signal() — reactive state               │
+│                               │  • computed() — lazy derived values        │
+│                               │  • effect() — scheduled side effects       │
+│                               │  • createOwner() — lifetime management     │
+│                               │  • Custom Elements for UI components       │
+│                               │  • WASM for protocol analysis              │
+│                               │  • No Virtual DOM — direct DOM updates     │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Why Emerge Core?
+
+| Aspect | Benefit |
+|--------|---------|
+| **Minimal Surface** | Only signals, computed, effects, and ownership |
+| **Platform First** | Works with Web Platform, not against it |
+| **No Magic** | Reactive graph and lifetime are explainable |
+| **Lightweight** | No framework overhead, no Virtual DOM |
+| **Composable** | Easy to build higher-level abstractions |
+| **TypeScript** | Full type safety (optional for consumers) |
+
+### Why Rust + WASM?
+
+| Aspect | Benefit |
+|--------|---------|
+| **Protocol Analysis** | OCPP parsing runs natively in browser via WASM |
+| **Performance** | Near-native speed for protocol processing |
+| **Type Safety** | Full type safety across network boundaries |
+| **Code Reuse** | Same Rust code for backend and frontend |
+| **No JavaScript** | No runtime overhead for protocol logic |
 
 ---
 
@@ -223,8 +252,8 @@ ChargeMesh follows an open-core business model:
 │  • Universal EV Model (EV-IR)                                              │
 │  • Simulator                                                               │
 │  • Local diagnostics                                                       │
-│  • SDK (Rust, TypeScript)                                                  │
-│  • CLI + Web Inspector                                                     │
+│  • SDK (Rust)                                                              │
+│  • CLI + Web Inspector (Emerge Core)                                       │
 │  • Community support                                                       │
 └────────────────────────────────────────────────────────────────────────────┘
                                     │
@@ -260,7 +289,7 @@ ChargeMesh follows an open-core business model:
 
 ## Project Status
 
-> **Early development — Phase 1 Complete**
+> **Early development — Phase 2 Complete**
 
 ChargeMesh is currently in active research and development. The APIs, EV-IR model, protocol adapters, and architecture are expected to evolve significantly.
 
@@ -268,103 +297,280 @@ ChargeMesh is currently in active research and development. The APIs, EV-IR mode
 
 ### Progress
 
-| Phase  | Component                                    | Status          |
-| ------ | -------------------------------------------- | --------------- |
-| P0     | Research & Specification                     | ✅ Complete     |
-| P0     | Architecture documentation                   | ✅ Complete     |
-| P0     | EV-IR specification                          | ✅ Complete     |
-| P0     | Protocol model                               | ✅ Complete     |
-| P0     | Capabilities model                           | ✅ Complete     |
-| P0     | State machines specification                 | ✅ Complete     |
-| P0     | Error taxonomy (ChargeX MREC)                | ✅ Complete     |
-| **P1** | **Universal EV Model**                       | ✅ **Complete** |
-| P1     | Core types (Power, Energy, Duration, etc.)   | ✅ Complete     |
-| P1     | EV-IR entities (16 entities)                 | ✅ Complete     |
-| P1     | State machines (Session, Station, Connector) | ✅ Complete     |
-| P1     | Unit tests                                   | ✅ Complete     |
-| P2     | OCPP 1.6                                     | 🚧 In Progress  |
-| P2     | WebSocket capture                            | 📋 Planned      |
-| P2     | Protocol logger                              | 📋 Planned      |
-| P2     | CLI tool                                     | 📋 Planned      |
-| P3     | Capability Engine                            | 📋 Planned      |
-| P3     | Diagnostics Engine                           | 📋 Planned      |
-| P4     | Simulator                                    | 📋 Planned      |
-| P5     | Web Debugger (WASM)                          | 📋 Planned      |
+| Phase | Component | Status |
+|-------|-----------|--------|
+| P0 | Research & Specification | ✅ Complete |
+| P0 | Architecture documentation | ✅ Complete |
+| P0 | EV-IR specification | ✅ Complete |
+| P0 | Protocol model | ✅ Complete |
+| P0 | Capabilities model | ✅ Complete |
+| P0 | State machines specification | ✅ Complete |
+| P0 | Error taxonomy (ChargeX MREC) | ✅ Complete |
+| **P1** | **Universal EV Model** | ✅ **Complete** |
+| P1 | Core types (Power, Energy, Duration, etc.) | ✅ Complete |
+| P1 | EV-IR entities (16 entities) | ✅ Complete |
+| P1 | State machines (Session, Station, Connector) | ✅ Complete |
+| P1 | Unit tests | ✅ Complete |
+| **P2** | **OCPP 1.6 Core** | ✅ **Complete** |
+| P2 | OCPP 1.6 messages (13 messages) | ✅ Complete |
+| P2 | OCPP 1.6 parser | ✅ Complete |
+| P2 | OCPP 1.6 client | ✅ Complete |
+| P2 | OCPP 1.6 server | ✅ Complete |
+| P2 | OCPP 1.6 state machine | ✅ Complete |
+| P2 | WebSocket utilities | ✅ Complete |
+| P2 | CLI tool (parse + capture) | ✅ Complete |
+| P2 | Integration tests | ✅ Complete |
+| P3 | OCPP 2.0.1 | 📋 Planned |
+| P3 | OCPP 2.1 | 📋 Planned |
+| P4 | Simulator | 📋 Planned |
+| P5 | Diagnostics Engine | 📋 Planned |
+| P6 | Observability Platform | 📋 Planned |
+| P7 | Web Inspector (Emerge Core + WASM) | 📋 Planned |
+| P8 | OCPI + Energy Integration | 📋 Planned |
 
-### MVP v0.1 Scope
+---
 
-| Component                                    | Status         |
-| -------------------------------------------- | -------------- |
-| Core types (Power, Energy, Duration, etc.)   | ✅ Complete    |
-| EV-IR model (16 entities)                    | ✅ Complete    |
-| State machines (Session, Station, Connector) | ✅ Complete    |
-| OCPP 1.6 (core messages)                     | 🚧 In Progress |
-| WebSocket capture                            | 📋 Planned     |
-| Protocol logger                              | 📋 Planned     |
-| CLI tool                                     | 📋 Planned     |
-| Basic Web debugger                           | 📋 Planned     |
-| Human-readable diagnosis                     | 📋 Planned     |
+## Installation
+
+### From Source
+
+```bash
+# Clone the repository
+git clone https://github.com/rustkas/chargemesh.git
+cd chargemesh
+
+# Build all crates
+cargo build --workspace
+
+# Install the CLI
+cargo install --path apps/chargemesh-cli
+```
+
+### Quick Start
+
+```bash
+# Parse an OCPP trace file
+chargemesh parse --file trace.ocpp --verbose
+
+# Capture traffic from a charger
+chargemesh capture --url ws://charger:9000 --output captured.ocpp --duration 30
+
+# Show version
+chargemesh version
+```
 
 ---
 
 ## Example
 
-A ChargeMesh application works with any charging station without knowing the underlying protocol:
+### Backend: Connect to a charger and start a session
 
 ```rust
 use chargemesh_ir::prelude::*;
+use chargemesh_ocpp::v16::*;
 use chargemesh_core::*;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Create a charging station
-    let mut station = ChargingStation::new(
-        StationId::new("CP-001"),
-        "ABB".to_string(),
-        "Terra 54".to_string(),
-    );
-
-    // Add EVSE and connector
-    let mut evse = EVSE::new(
-        EvseId::new("EVSE-1"),
-        StationId::new("CP-001"),
-        Power::new(50000),
-    );
-
-    let connector = Connector::new(
-        ConnectorId::new("CONN-1"),
-        EvseId::new("EVSE-1"),
-        ConnectorType::CCS,
-        Power::new(50000),
-    );
-    evse.add_connector(connector);
-    station.add_evse(evse);
-
-    // Start a charging session
-    let mut session = ChargingSession::new(
-        StationId::new("CP-001"),
-        EvseId::new("EVSE-1"),
-        ConnectorId::new("CONN-1"),
-    );
-
-    // Use state machine
-    let mut sm = SessionStateMachine::new();
-    sm.start_authorization()?;
-    sm.authorize()?;
-    sm.start_charging()?;
-
-    // Update session state
-    session.transition_to(SessionState::Charging)?;
-
-    // Add meter reading
-    let meter = MeterValue::new(Energy::new(1000));
-    session.add_meter_reading(meter);
-
-    println!("Session ID: {}", session.id);
-    println!("State: {:?}", session.state);
-
+    // Connect to a charging station via OCPP 1.6
+    let client = Ocpp16Client::connect("ws://charger:9000").await?;
+    
+    // Boot notification
+    let boot_resp = client.boot_notification("ABB", "Terra 54").await?;
+    println!("Boot status: {:?}", boot_resp.status);
+    
+    // Start a transaction
+    let auth_resp = client.authorize("RFID-123").await?;
+    let tx_resp = client.start_transaction(1, "RFID-123", 0).await?;
+    println!("Transaction ID: {}", tx_resp.transaction_id);
+    
+    // Send meter values
+    let meter = MeterValue {
+        timestamp: chrono::Utc::now(),
+        sampled_value: vec![SampledValue {
+            value: "10.5".to_string(),
+            context: Some(ReadingContext::SamplePeriodic),
+            format: None,
+            measurand: Some(Measurand::EnergyActiveImportRegister),
+            unit: Some(UnitOfMeasure::kWh),
+            location: None,
+        }],
+    };
+    client.meter_values(1, Some(tx_resp.transaction_id), vec![meter]).await?;
+    
+    // Stop transaction
+    client.stop_transaction(tx_resp.transaction_id, 1000, None, None).await?;
+    
+    client.close().await?;
+    
     Ok(())
 }
+```
+
+### Frontend: Web Inspector with Emerge Core
+
+```typescript
+// web/inspector/src/main.ts — Emerge Core + WASM
+
+import {
+  signal,
+  computed,
+  effect,
+  createOwner,
+  runWithOwner,
+} from '@emerge/core';
+
+// Import WASM module
+import init, { parse_ocpp_message } from './wasm/chargemesh_wasm.js';
+
+// Reactive state
+const trace = signal<ParsedMessage[]>([]);
+const selectedIndex = signal<number | null>(null);
+const filter = signal<string>('');
+
+// Computed: filtered messages
+const filteredMessages = computed(() => {
+  const query = filter.value.toLowerCase();
+  return trace.value.filter(msg => 
+    msg.action.toLowerCase().includes(query) ||
+    msg.id_tag?.toLowerCase().includes(query)
+  );
+});
+
+// Computed: session state machine
+const sessionState = computed(() => {
+  const sm = new Ocpp16Session();
+  for (const msg of trace.value) {
+    sm.process(msg);
+  }
+  return sm.state;
+});
+
+// Effect: update DOM when trace changes
+const owner = createOwner();
+runWithOwner(owner, () => {
+  effect(() => {
+    const messages = filteredMessages.value;
+    const container = document.getElementById('timeline');
+    if (container) {
+      container.innerHTML = messages.map((msg, i) => `
+        <div class="message ${i === selectedIndex.value ? 'selected' : ''}"
+             data-index="${i}">
+          <span class="time">${msg.timestamp}</span>
+          <span class="direction">${msg.direction}</span>
+          <span class="content">${msg.action}</span>
+        </div>
+      `).join('');
+      
+      // Attach event listeners
+      container.querySelectorAll('.message').forEach(el => {
+        el.addEventListener('click', () => {
+          selectedIndex.value = parseInt(el.dataset.index!);
+        });
+      });
+    }
+  });
+});
+
+// Effect: update state machine display
+runWithOwner(owner, () => {
+  effect(() => {
+    const state = sessionState.value;
+    const el = document.getElementById('state');
+    if (el) {
+      el.textContent = `Current State: ${state}`;
+    }
+  });
+});
+
+// Load trace file
+document.getElementById('load-btn')?.addEventListener('click', async () => {
+  const file = (document.getElementById('file-input') as HTMLInputElement).files?.[0];
+  if (!file) return;
+  
+  const content = await file.text();
+  const lines = content.split('\n');
+  const parsed: ParsedMessage[] = [];
+  
+  for (const line of lines) {
+    if (line.trim()) {
+      const msg = parse_ocpp_message(line);
+      if (msg) parsed.push(msg);
+    }
+  }
+  
+  trace.value = parsed;
+});
+
+// Initialize WASM
+await init();
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+  owner.dispose();
+});
+```
+
+### Custom Element for OCPP Inspector
+
+```typescript
+// web/inspector/src/components/ocpp-inspector.ts
+
+import { signal, effect, createOwner, runWithOwner } from '@emerge/core';
+
+class OcppInspector extends HTMLElement {
+  private owner = createOwner();
+  private trace = signal<ParsedMessage[]>([]);
+  
+  connectedCallback() {
+    this.render();
+    this.setupEffects();
+  }
+  
+  disconnectedCallback() {
+    this.owner.dispose();
+  }
+  
+  private render() {
+    this.innerHTML = `
+      <div class="inspector">
+        <header>
+          <h1>⚡ OCPP Inspector</h1>
+          <input type="file" id="load-trace" accept=".ocpp,.txt">
+        </header>
+        <main>
+          <div id="timeline"></div>
+          <div id="state"></div>
+        </main>
+      </div>
+    `;
+  }
+  
+  private setupEffects() {
+    runWithOwner(this.owner, () => {
+      effect(() => {
+        const messages = this.trace.value;
+        const container = this.querySelector('#timeline');
+        if (container) {
+          container.innerHTML = messages.map(m => 
+            `<div>${m.timestamp} ${m.action}</div>`
+          ).join('');
+        }
+      });
+    });
+    
+    // File load handler
+    this.querySelector('#load-trace')?.addEventListener('change', async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const content = await file.text();
+        // Parse and update trace
+      }
+    });
+  }
+}
+
+customElements.define('ocpp-inspector', OcppInspector);
 ```
 
 The application does not need to know whether the underlying device uses OCPP 1.6, OCPP 2.0.1, OCPP 2.1, or a vendor-specific implementation.
@@ -387,50 +593,37 @@ chargemesh/
 │   └── error-taxonomy.md                      # Error taxonomy (ChargeX MREC)
 ├── crates/
 │   ├── chargemesh-core/                       # Core types & utilities
-│   │   ├── Cargo.toml
-│   │   └── src/
-│   │       ├── lib.rs
-│   │       ├── types.rs                       # Power, Energy, Duration, etc.
-│   │       ├── error.rs                       # CoreError, CoreResult
-│   │       ├── ident.rs                       # Id, StationId, EvseId, etc.
-│   │       ├── time.rs                        # Timestamp, TimeRange
-│   │       ├── crypto.rs                      # SHA256Hash, generate_token
-│   │       └── config.rs                      # Configuration utilities
-│   │
-│   └── chargemesh-ir/                         # EV-IR model
+│   ├── chargemesh-ir/                         # EV-IR model
+│   ├── chargemesh-ocpp/                       # OCPP Implementation
+│   └── chargemesh-wasm/                       # WASM module for web
 │       ├── Cargo.toml
 │       └── src/
-│           ├── lib.rs
-│           ├── network.rs                     # ChargingNetwork
-│           ├── station.rs                     # ChargingStation
-│           ├── evse.rs                        # EVSE
-│           ├── connector.rs                   # Connector
-│           ├── vehicle.rs                     # Vehicle
-│           ├── session.rs                     # ChargingSession
-│           ├── transaction.rs                 # Transaction
-│           ├── meter.rs                       # Meter, MeterValue
-│           ├── tariff.rs                      # Tariff
-│           ├── authorization.rs               # Authorization
-│           ├── reservation.rs                 # Reservation
-│           ├── profile.rs                     # ChargingProfile
-│           ├── capability.rs                  # Capabilities
-│           ├── error.rs                       # ChargingError (ChargeX)
-│           ├── firmware.rs                    # Firmware
-│           ├── energy.rs                      # EnergyConstraint
-│           └── state_machine/                 # State machines
-│               ├── mod.rs
-│               ├── session.rs                 # SessionStateMachine
-│               ├── station.rs                 # StationStateMachine
-│               └── connector.rs               # ConnectorStateMachine
+│           └── lib.rs                         # Exports for Emerge
+├── apps/
+│   ├── chargemesh-cli/                        # Command-line interface
+│   └── chargemesh-inspector/                  # Web Inspector
+│       ├── Cargo.toml                         # Rust backend for inspector
+│       └── src/
+│           └── main.rs                        # Axum server
+├── web/
+│   └── inspector/                             # Frontend (Emerge Core)
+│       ├── package.json
+│       ├── tsconfig.json
+│       ├── index.html
+│       ├── src/
+│       │   ├── main.ts                        # Application entry
+│       │   ├── components/
+│       │   │   ├── ocpp-inspector.ts          # Custom Element
+│       │   │   └── state-machine.ts           # State visualization
+│       │   └── wasm/                          # WASM bindings
+│       │       └── index.ts
+│       └── styles/
+│           └── main.css
 ├── tests/
 │   ├── unit/
-│   │   └── core_tests.rs                      # Core types tests
-│   └── integration/
-│       └── ir_tests.rs                        # EV-IR integration tests
-├── apps/                                      # Applications (Phase 2+)
-│   └── chargemesh-cli/                        # CLI (planned)
-└── web/                                       # Web tools (Phase 5+)
-    └── debugger/                              # Web debugger (planned)
+│   ├── integration/
+│   └── e2e/
+└── examples/
 ```
 
 ---
@@ -442,8 +635,10 @@ chargemesh/
 - Rust stable toolchain (1.70+)
 - Cargo
 - Git
+- Node.js 18+ (for web inspector)
+- wasm-pack (for WASM compilation)
 
-### Quick Start
+### Build
 
 ```bash
 # Clone the repository
@@ -453,22 +648,41 @@ cd chargemesh
 # Build all crates
 cargo build --workspace
 
+# Build in release mode
+cargo build --release --workspace
+
 # Run tests
 cargo test --workspace
 
-# Run specific tests
-cargo test -p chargemesh-ir
-cargo test -p chargemesh-core
-```
+# Build WASM for web
+wasm-pack build --target web crates/chargemesh-wasm
 
-### Project Structure
+# Build web inspector
+cd web/inspector
+npm install
+npm run build
 
-```bash
 # View project structure
 tree -L 3
 
 # Build documentation
 cargo doc --workspace --open
+```
+
+### CLI Usage
+
+```bash
+# Parse a trace file
+chargemesh parse --file examples/trace.ocpp --verbose
+
+# Parse with JSON output
+chargemesh parse --file trace.ocpp --format json
+
+# Capture traffic
+chargemesh capture --url ws://charger:9000 --output captured.ocpp --duration 60
+
+# Show version
+chargemesh version
 ```
 
 ---
@@ -505,11 +719,15 @@ The simulator should allow testing without physical equipment. Every scenario sh
 
 ### Developer Experience
 
-CLI and Web debugger should make troubleshooting intuitive. The learning curve should be gentle.
+CLI and Web Inspector should make troubleshooting intuitive. The learning curve should be gentle.
 
 ### Open Source Core
 
 The fundamental interoperability layer remains open source. Commercial value is added through cloud services, advanced diagnostics, and enterprise features.
+
+### Minimal Foundations
+
+Using `@emerge/core` as the reactive foundation allows us to build exactly what we need — no more, no less. We own the rendering layer, the component model, and the tooling.
 
 ---
 
@@ -552,19 +770,19 @@ ChargeMesh aims to become a common software infrastructure layer for EV charging
 
 ## Roadmap
 
-| Phase  | Component                  | Status         |
-| ------ | -------------------------- | -------------- |
-| **P0** | Research & Specification   | ✅ Complete    |
-| **P1** | Universal EV Model (EV-IR) | ✅ Complete    |
-| P2     | OCPP 1.6 Core              | 🚧 In Progress |
-| P2     | OCPP Simulator             | 📋 Planned     |
-| P2     | CLI Tool                   | 📋 Planned     |
-| P3     | Capability Engine          | 📋 Planned     |
-| P3     | Diagnostics Engine         | 📋 Planned     |
-| P4     | Observability Platform     | 📋 Planned     |
-| P5     | Web Debugger (WASM)        | 📋 Planned     |
-| P6     | OCPI + Energy Integration  | 📋 Planned     |
-| P7     | Cloud Platform             | 📋 Planned     |
+| Phase | Component | Status |
+|-------|-----------|--------|
+| **P0** | Research & Specification | ✅ Complete |
+| **P1** | Universal EV Model (EV-IR) | ✅ Complete |
+| **P2** | OCPP 1.6 Core | ✅ Complete |
+| P3 | OCPP 2.0.1 | 📋 Planned |
+| P3 | OCPP 2.1 | 📋 Planned |
+| P4 | Simulator | 📋 Planned |
+| P5 | Diagnostics Engine | 📋 Planned |
+| P6 | Observability Platform | 📋 Planned |
+| P7 | Web Inspector (Emerge Core + WASM) | 📋 Planned |
+| P8 | OCPI + Energy Integration | 📋 Planned |
+| P9 | Cloud Platform | 📋 Planned |
 
 ---
 
@@ -584,12 +802,13 @@ Please open an issue before implementing a major architectural change.
 
 ### Areas Needing Help
 
-- OCPP implementations (1.6, 2.0.1, 2.1)
+- OCPP 2.0.1 implementation
+- OCPP 2.1 implementation
 - Additional vendor profiles
 - Simulator scenarios
 - Diagnostics rules
 - Documentation
-- Web tooling
+- Web Inspector (Emerge Core + WASM)
 - Testing
 
 ---
@@ -610,6 +829,7 @@ ChargeMesh builds upon the work of many standards bodies and open-source project
 - [ChargeX Consortium](https://chargex.eu/) — Error taxonomy
 - [Tokio](https://tokio.rs/) — Async runtime
 - [Serde](https://serde.rs/) — Serialization
+- [Emerge Core](https://github.com/rustkas/emerge-core) — Reactive foundation
 
 ---
 
@@ -624,38 +844,36 @@ ChargeMesh builds upon the work of many standards bodies and open-source project
 **ChargeMesh: Making EV charging infrastructure programmable.**
 
 ```text
-                    ┌─────────────────┐
-                    │   ChargeMesh    │
-                    │                 │
-                    │  EV Charging    │
-                    │ Interoperability│
-                    │  for the Future │
-                    └─────────────────┘
+                    ┌──────────────────┐
+                    │   ChargeMesh     │
+                    │                  │
+                    │  EV Charging     │
+                    │  Interoperability│
+                    │  for the Future  │
+                    └──────────────────┘
 ```
 
 ---
 
-## Summary of Phase 1
+## Summary
 
-### What was implemented:
+### Phase 1 (Complete)
+- ✅ `chargemesh-core` — Core types, identifiers, error handling
+- ✅ `chargemesh-ir` — 16 EV-IR entities, state machines
+- ✅ Unit and integration tests
 
-| Component                                                                  | Status      |
-| -------------------------------------------------------------------------- | ----------- |
-| `chargemesh-core` crate                                                    | ✅ Complete |
-| Core types (Power, Energy, Duration, Temperature, Percentage, Money)       | ✅ Complete |
-| Identifiers (Id, StationId, EvseId, ConnectorId, SessionId, TransactionId) | ✅ Complete |
-| Error handling (CoreError, CoreResult)                                     | ✅ Complete |
-| Time utilities (Timestamp, TimeRange)                                      | ✅ Complete |
-| Crypto utilities (SHA256Hash, generate_token)                              | ✅ Complete |
-| `chargemesh-ir` crate                                                      | ✅ Complete |
-| 16 EV-IR entities                                                          | ✅ Complete |
-| State machines (Session, Station, Connector)                               | ✅ Complete |
-| Unit tests                                                                 | ✅ Complete |
-| Integration tests                                                          | ✅ Complete |
-| Documentation (docs/)                                                      | ✅ Complete |
-| README.md                                                                  | ✅ Updated  |
+### Phase 2 (Complete)
+- ✅ `chargemesh-ocpp` — OCPP 1.6 implementation
+- ✅ 13 OCPP 1.6 messages
+- ✅ WebSocket client/server
+- ✅ OCPP 1.6 parser and state machine
+- ✅ CLI tool (`parse` and `capture`)
+- ✅ Unit, integration, and E2E tests
 
-```
-
-**Phase 1 is now fully complete!** 🚀
+### Next Steps
+- Phase 3: OCPP 2.0.1 and OCPP 2.1
+- Phase 4: Simulator
+- Phase 5: Diagnostics Engine
+- Phase 6: Observability Platform
+- Phase 7: Web Inspector with Emerge Core + WASM
 ```
