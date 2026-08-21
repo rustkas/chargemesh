@@ -1,0 +1,46 @@
+[package]
+name = "chargemesh-diagnostics"
+version = "0.1.0"
+edition = "2021"
+authors = ["ChargeMesh Team"]
+description = "Diagnostics Engine for ChargeMesh"
+license = "Apache-2.0"
+repository = "https://github.com/rustkas/chargemesh"
+
+[dependencies]
+chargemesh-core = { path = "../chargemesh-core" }
+chargemesh-ir = { path = "../chargemesh-ir" }
+chargemesh-ocpp = { path = "../chargemesh-ocpp" }
+chargemesh-capability = { path = "../chargemesh-capability" }
+chargemesh-simulator = { path = "../chargemesh-simulator" }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+serde_html = { workspace = true }
+
+# Async
+tokio = { workspace = true }
+async-trait = { workspace = true }
+
+# Utilities
+chrono = { workspace = true }
+uuid = { workspace = true }
+thiserror = { workspace = true }
+derive_more = { workspace = true }
+tracing = { workspace = true }
+regex = { workspace = true }
+lazy_static = { workspace = true }
+petgraph = { workspace = true }
+
+# ML / Stats
+ndarray = { workspace = true }
+statrs = { workspace = true }
+rand = { workspace = true }
+
+# Report generation
+handlebars = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = "1.0"

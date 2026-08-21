@@ -73,17 +73,17 @@ Vendor APIs ──┘
 ### EV-IR Entity Model
 
 ```text
-┌────────────────────────────────────────────────────────┐
-│                    ChargingNetwork                     │
+┌─────────────────────────────────────────────────────────┐
+│                    ChargingNetwork                      │
 │  + id: string                                          │
 │  + name: string                                        │
 │  + stations: ChargingStation[]                         │
 │  + capabilities: Capabilities                          │
-└───────────────────┬────────────────────────────────────┘
+└───────────────────┬─────────────────────────────────────┘
                     │
                     ▼
-┌────────────────────────────────────────────────────────┐
-│                    ChargingStation                     │
+┌─────────────────────────────────────────────────────────┐
+│                    ChargingStation                      │
 │  + id: StationId                                       │
 │  + vendor: string                                      │
 │  + model: string                                       │
@@ -91,30 +91,30 @@ Vendor APIs ──┘
 │  + evses: EVSE[]                                       │
 │  + capabilities: Capabilities                          │
 │  + state: StationState                                 │
-└───────────────────┬────────────────────────────────────┘
+└───────────────────┬─────────────────────────────────────┘
                     │
                     ▼
-┌────────────────────────────────────────────────────────┐
-│                    EVSE                                │
+┌─────────────────────────────────────────────────────────┐
+│                    EVSE                                 │
 │  + id: EvseId                                          │
-│  + connectors: Connector[]                             │
+│  + connectors: Connector[]                              │
 │  + maxPower: Power                                     │
 │  + state: EVSEState                                    │
-└───────────────────┬────────────────────────────────────┘
+└───────────────────┬─────────────────────────────────────┘
                     │
                     ▼
-┌────────────────────────────────────────────────────────┐
-│                  Connector                             │
+┌─────────────────────────────────────────────────────────┐
+│                  Connector                              │
 │  + id: ConnectorId                                     │
 │  + type: ConnectorType                                 │
 │  + state: ConnectorState                               │
 │  + currentSession?: ChargingSession                    │
 │  + maxPower: Power                                     │
-└───────────────────┬────────────────────────────────────┘
+└───────────────────┬─────────────────────────────────────┘
                     │
                     ▼
-┌────────────────────────────────────────────────────────┐
-│                   ChargingSession                      │
+┌─────────────────────────────────────────────────────────┐
+│                   ChargingSession                       │
 │  + id: SessionId                                       │
 │  + stationId: StationId                                │
 │  + evseId: EvseId                                      │
@@ -123,7 +123,7 @@ Vendor APIs ──┘
 │  + startTime: Timestamp                                │
 │  + endTime?: Timestamp                                 │
 │  + energyConsumed: Energy                              │
-└────────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────┘
 ```
 
 ### Supported Entities
@@ -170,9 +170,9 @@ ChargeMesh is organized into several layers:
 │         Station │ EVSE │ Connector │ Session │ Transaction │ Meter          │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                    PROTOCOL ADAPTER LAYER                                   │
-├────────────┬────────────┬────────────┬────────────┬─────────────────────────┤
-│  OCPP 1.6  │ OCPP 2.0.1 │ OCPP 2.1   │ ISO 15118  │        OCPI             │
-└────────────┴────────────┴────────────┴────────────┴─────────────────────────┘
+├────────────┬────────────┬────────────┬────────────┬───────────────────────┤
+│  OCPP 1.6  │ OCPP 2.0.1 │ OCPP 2.1  │ ISO 15118  │        OCPI           │
+└────────────┴────────────┴────────────┴────────────┴───────────────────────┘
 ```
 
 ---
@@ -184,37 +184,42 @@ ChargeMesh uses **Rust** as its primary language for the core platform, with **E
 ### Core Platform (Rust)
 
 ```text
-┌────────────────────────────────────────────────────────────────────────────┐
+┌─────────────────────────────────────────────────────────────────────────────┐
 │  BACKEND (Rust)               │  Tokio (async runtime)                     │
 │                               │  Serde (serialization)                     │
 │                               │  Tracing (observability)                   │
 │                               │  SQLx (database)                           │
-├────────────────────────────────────────────────────────────────────────────┤
-│  PROTOCOLS                    │  OCPP 1.6, 2.0.1, 2.1                      │
-│                               │  ISO 15118 / V2G                           │
-│                               │  OCPI (roaming)                            │
-├────────────────────────────────────────────────────────────────────────────┤
-│  CAPABILITY ENGINE            │  Multi-factor capability detection         │
-│                               │  Protocol │ Vendor │ Firmware │ Runtime    │
-│                               │  Rule-based evaluation                     │
-│                               │  Vendor profiles (ABB, Siemens)            │
-├────────────────────────────────────────────────────────────────────────────┤
-│  SIMULATOR                    │  EV │ EVSE │ CSMS │ OCPI │ Grid            │
-│                               │  Fault injection │ Scenarios               │
-│                               │  Normal │ Network Failure │ V2G            │
-├────────────────────────────────────────────────────────────────────────────┤
+├─────────────────────────────────────────────────────────────────────────────┤
+│  PROTOCOLS                    │  OCPP 1.6, 2.0.1, 2.1                     │
+│                               │  ISO 15118 / V2G                          │
+│                               │  OCPI (roaming)                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  CAPABILITY ENGINE            │  Multi-factor capability detection        │
+│                               │  Protocol │ Vendor │ Firmware │ Runtime   │
+│                               │  Rule-based evaluation                    │
+│                               │  Vendor profiles (ABB, Siemens)           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  DIAGNOSTICS ENGINE           │  Timeline collection                      │
+│                               │  Pattern, Sequence, Performance, Security │
+│                               │  Root Cause Analysis with confidence      │
+│                               │  Report generation (JSON, HTML)           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  SIMULATOR                    │  EV │ EVSE │ CSMS │ OCPI │ Grid           │
+│                               │  Fault injection │ Scenarios              │
+│                               │  Normal │ Network Failure │ V2G           │
+├─────────────────────────────────────────────────────────────────────────────┤
 │  DATA LAYER                   │  PostgreSQL │ Redis │ NATS/Kafka           │
-├────────────────────────────────────────────────────────────────────────────┤
+├─────────────────────────────────────────────────────────────────────────────┤
 │  INFRASTRUCTURE               │  Docker │ Kubernetes │ Terraform           │
 │                               │  Prometheus │ Grafana │ ELK Stack          │
-└────────────────────────────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Web Frontend (Emerge Core)
 
 ```text
-┌────────────────────────────────────────────────────────────────────────────┐
-│  FRONTEND (Emerge Core)       │  @emerge/core (signals, computed, effects) │
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  FRONTEND (Emerge Core)        │  @emerge/core (signals, computed, effects)│
 │                               │  • signal() — reactive state               │
 │                               │  • computed() — lazy derived values        │
 │                               │  • effect() — scheduled side effects       │
@@ -222,7 +227,7 @@ ChargeMesh uses **Rust** as its primary language for the core platform, with **E
 │                               │  • Custom Elements for UI components       │
 │                               │  • WASM for protocol analysis              │
 │                               │  • No Virtual DOM — direct DOM updates     │
-└────────────────────────────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Why Rust + Emerge Core?
@@ -235,6 +240,7 @@ ChargeMesh uses **Rust** as its primary language for the core platform, with **E
 | **Code Reuse** | Same Rust code for backend and frontend |
 | **No JavaScript** | No runtime overhead for protocol logic |
 | **Capability Engine** | Multi-factor detection with rule-based evaluation |
+| **Diagnostics Engine** | Timeline analysis and root cause detection |
 | **Simulator** | Full ecosystem simulation without physical hardware |
 
 ---
@@ -244,20 +250,20 @@ ChargeMesh uses **Rust** as its primary language for the core platform, with **E
 ChargeMesh follows an open-core business model:
 
 ```text
-┌────────────────────────────────────────────────────────────────────────────┐
-│                         FREE / Open Source                                 │
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         FREE / Open Source                                  │
 │  • Protocol libraries (OCPP 1.6, 2.0.1, 2.1)                               │
 │  • Universal EV Model (EV-IR)                                              │
-│  • Capability Engine                                                       │
+│  • Capability Engine                                                        │
+│  • Diagnostics Engine (local)                                              │
 │  • Simulator (EV, EVSE, CSMS, OCPI, Grid)                                  │
-│  • Local diagnostics                                                       │
 │  • SDK (Rust)                                                              │
 │  • CLI + Web Inspector (Emerge Core)                                       │
 │  • Community support                                                       │
-└────────────────────────────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
-┌────────────────────────────────────────────────────────────────────────────┐
+┌─────────────────────────────────────────────────────────────────────────────┐
 │                           PRO ($99/mo)                                     │
 │  • Cloud monitoring                                                        │
 │  • Fleet management                                                        │
@@ -267,10 +273,10 @@ ChargeMesh follows an open-core business model:
 │  • Up to 100 stations                                                      │
 │  • 10 users                                                                │
 │  • 8/5 support                                                             │
-└────────────────────────────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
-┌────────────────────────────────────────────────────────────────────────────┐
+┌─────────────────────────────────────────────────────────────────────────────┐
 │                      ENTERPRISE ($499/mo)                                  │
 │  • Private deployment                                                      │
 │  • SLA (99.9% uptime)                                                      │
@@ -281,14 +287,14 @@ ChargeMesh follows an open-core business model:
 │  • Unlimited users                                                         │
 │  • 24/7 support                                                            │
 │  • Custom features                                                         │
-└────────────────────────────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## Project Status
 
-> **Early development — Phase 4 Complete**
+> **Early development — Phase 5 Complete**
 
 ChargeMesh is currently in active research and development. The APIs, EV-IR model, protocol adapters, and architecture are expected to evolve significantly.
 
@@ -299,40 +305,19 @@ ChargeMesh is currently in active research and development. The APIs, EV-IR mode
 | Phase | Component | Status |
 |-------|-----------|--------|
 | P0 | Research & Specification | ✅ Complete |
-| P0 | Architecture documentation | ✅ Complete |
-| P0 | EV-IR specification | ✅ Complete |
-| P0 | Protocol model | ✅ Complete |
-| P0 | Capabilities model | ✅ Complete |
-| P0 | State machines specification | ✅ Complete |
-| P0 | Error taxonomy (ChargeX MREC) | ✅ Complete |
 | **P1** | **Universal EV Model** | ✅ **Complete** |
-| P1 | Core types (Power, Energy, Duration, etc.) | ✅ Complete |
-| P1 | EV-IR entities (16 entities) | ✅ Complete |
-| P1 | State machines (Session, Station, Connector) | ✅ Complete |
 | **P2** | **OCPP 1.6 Core** | ✅ **Complete** |
-| P2 | OCPP 1.6 messages (13 messages) | ✅ Complete |
-| P2 | OCPP 1.6 parser | ✅ Complete |
-| P2 | OCPP 1.6 client | ✅ Complete |
-| P2 | OCPP 1.6 server | ✅ Complete |
-| P2 | OCPP 1.6 state machine | ✅ Complete |
-| P2 | WebSocket utilities | ✅ Complete |
-| P2 | CLI tool (parse + capture) | ✅ Complete |
 | **P3** | **Capability Engine** | ✅ **Complete** |
-| P3 | Capability detection (protocol, vendor, firmware, runtime) | ✅ Complete |
-| P3 | CapabilityRegistry with defaults | ✅ Complete |
-| P3 | Rule engine with conditions and actions | ✅ Complete |
-| P3 | Vendor profiles (ABB, Siemens) | ✅ Complete |
-| P3 | CLI command `capability` | ✅ Complete |
 | **P4** | **Simulator** | ✅ **Complete** |
-| P4 | EV Simulator (battery, ISO 15118) | ✅ Complete |
-| P4 | EVSE Simulator (station, connectors) | ✅ Complete |
-| P4 | CSMS Simulator | ✅ Complete |
-| P4 | OCPI Simulator | ✅ Complete |
-| P4 | Grid Simulator | ✅ Complete |
-| P4 | Fault injector | ✅ Complete |
-| P4 | Scenario system (6 scenarios) | ✅ Complete |
-| P4 | CLI command `simulate` | ✅ Complete |
-| P5 | Diagnostics Engine | 📋 Planned |
+| **P5** | **Diagnostics Engine** | ✅ **Complete** |
+| P5 | Timeline Collector | ✅ Complete |
+| P5 | Pattern Analyzer | ✅ Complete |
+| P5 | Sequence Analyzer | ✅ Complete |
+| P5 | Performance Analyzer | ✅ Complete |
+| P5 | Security Analyzer | ✅ Complete |
+| P5 | Root Cause Analysis | ✅ Complete |
+| P5 | Report Generator (JSON, HTML) | ✅ Complete |
+| P5 | CLI command `diagnose` | ✅ Complete |
 | P6 | Observability Platform | 📋 Planned |
 | P7 | Web Inspector (Emerge Core + WASM) | 📋 Planned |
 | P8 | OCPI + Energy Integration | 📋 Planned |
@@ -371,6 +356,12 @@ chargemesh capability --config station.json --format human --verbose
 # Run a simulation
 chargemesh simulate --target charger --scenario normal
 
+# Diagnose a trace file
+chargemesh diagnose --file trace.ocpp --verbose
+
+# Generate HTML report
+chargemesh diagnose --file trace.ocpp --format html --output report.html
+
 # List available scenarios
 chargemesh simulate --list-scenarios
 
@@ -402,33 +393,59 @@ chargemesh parse --file trace.ocpp --verbose
   12:03:26 ⬅️  Call(StatusNotification)
 ```
 
-### 2. Analyze Capabilities
+### 2. Diagnose a Trace
 
 ```bash
-chargemesh capability --config station.json
+chargemesh diagnose --file trace.ocpp --verbose
 ```
 
 ```text
 ═══════════════════════════════════════════════════════════
-  🔧 CAPABILITY REPORT
+  🔍 DIAGNOSTIC REPORT
 ═══════════════════════════════════════════════════════════
 
-📊 CAPABILITIES
-  • BasicCharging               ✅ Supported
-  • SmartCharging               ✅ Supported
-  • OCPP2_0_1                   ✅ Supported
-  • PlugAndCharge               ✅ Supported
-  • V2G                         ❌ Not supported
-  • Reservation                 ✅ Supported
-  • RemoteDiagnostics           ✅ Supported
+📊 SUMMARY
+  Found 1 root cause(s) with 3 total findings.
+  1 critical issue(s) detected.
 
-💡 SUMMARY
-  Total: 12
-  Supported: 10
-  Limited: 2
+  Top root causes:
+  1. Certificate Validation Failure (confidence: 94%)
+
+🔍 ROOT CAUSES
+
+  1. Certificate Validation Failure
+     Confidence: 94%
+     ISO 15118 certificate validation failed
+
+     Possible causes:
+       • Certificate has expired (probability: 40%)
+         💡 Renew certificate and update system time
+       • Certificate trust chain is invalid (probability: 30%)
+         💡 Verify and update trust chain configuration
+       • System time is incorrect (probability: 20%)
+         💡 Synchronize system time with NTP
+       • SECC certificate mismatch (probability: 10%)
+         💡 Update SECC certificate configuration
+
+💡 RECOMMENDATIONS
+  • Check certificate validity
+    Verify certificate is not expired and trust chain is valid
+  • Check network connectivity
+    Verify network stability and signal strength
+
+⏱️ TIMELINE (last 20 events)
+  12:03:25 [❌] ISO15118Handshake Protocol
+  12:03:25 [❌] ISO15118CertificateValidation Certificate
+  12:03:26 [❌] Error Protocol
 ```
 
-### 3. Run Simulation
+### 3. Generate HTML Report
+
+```bash
+chargemesh diagnose --file trace.ocpp --format html --output report.html
+```
+
+### 4. Run Simulation
 
 ```bash
 chargemesh simulate --target charger --scenario network-failure --verbose
@@ -457,7 +474,7 @@ Step 6: StopCharging
 ✅ Simulation completed successfully
 ```
 
-### 4. List Scenarios
+### 5. List Scenarios
 
 ```bash
 chargemesh simulate --list-scenarios
@@ -494,35 +511,32 @@ chargemesh/
 │   ├── chargemesh-ir/                         # EV-IR model
 │   ├── chargemesh-ocpp/                       # OCPP Implementation
 │   ├── chargemesh-capability/                 # Capability Engine
-│   └── chargemesh-simulator/                  # Simulator
+│   ├── chargemesh-simulator/                  # Simulator
+│   └── chargemesh-diagnostics/                # ⭐ Diagnostics Engine
 │       ├── Cargo.toml
 │       └── src/
 │           ├── lib.rs
-│           ├── core/                          # Core simulator components
-│           │   ├── simulator.rs               # Main coordinator
-│           │   ├── scenario.rs                # Scenarios
-│           │   └── event.rs                   # Events
-│           ├── ev/                            # EV Simulator
-│           │   ├── ev_simulator.rs
-│           │   ├── battery.rs
-│           │   └── iso15118.rs
-│           ├── evse/                          # EVSE Simulator
-│           │   ├── evse_simulator.rs
-│           │   └── station.rs
-│           ├── csms/                          # CSMS Simulator
-│           │   └── csms_simulator.rs
-│           ├── ocpi/                          # OCPI Simulator
-│           │   └── ocpi_simulator.rs
-│           ├── grid/                          # Grid Simulator
-│           │   └── grid_simulator.rs
-│           └── faults/                        # Fault Injection
-│               ├── fault_injector.rs
-│               └── scenarios.rs
+│           ├── engine/                        # Core engine
+│           │   ├── diagnostics_engine.rs      # Main coordinator
+│           │   ├── timeline.rs                # Timeline management
+│           │   ├── analyzer.rs                # Analyzer trait
+│           │   └── root_cause.rs              # Root cause analysis
+│           ├── analyzers/                     # Specific analyzers
+│           │   ├── pattern_analyzer.rs        # Pattern detection
+│           │   ├── sequence_analyzer.rs       # Sequence validation
+│           │   ├── performance_analyzer.rs    # Performance analysis
+│           │   └── security_analyzer.rs       # Security analysis
+│           ├── root_cause/                    # Root cause
+│           │   ├── analyzer.rs                # Root cause analyzer
+│           │   └── repository.rs              # Pattern repository
+│           └── report/                        # Report generation
+│               ├── generator.rs               # Report generator
+│               └── templates.rs               # Templates
 ├── apps/
 │   └── chargemesh-cli/                        # Command-line interface
 │       ├── Cargo.toml
 │       └── src/
-│           └── main.rs                        # Parse, Capture, Capability, Simulate
+│           └── main.rs                        # Parse, Capture, Capability, Simulate, Diagnose
 ├── web/
 │   └── inspector/                             # Web Inspector (Phase 7+)
 ├── tests/
@@ -531,11 +545,13 @@ chargemesh/
 │   │   ├── ir_tests.rs
 │   │   ├── ocpp_tests.rs
 │   │   ├── capability_tests.rs
-│   │   └── simulator_tests.rs
+│   │   ├── simulator_tests.rs
+│   │   └── diagnostics_tests.rs               # ⭐ Diagnostics tests
 │   └── e2e/
 │       ├── ocpp_e2e_tests.rs
 │       ├── capability_e2e_tests.rs
-│       └── simulator_e2e_tests.rs
+│       ├── simulator_e2e_tests.rs
+│       └── diagnostics_e2e_tests.rs           # ⭐ Diagnostics E2E tests
 └── examples/
     ├── basic_connect.rs
     ├── diagnose_trace.rs
@@ -576,6 +592,7 @@ cargo test -p chargemesh-ir
 cargo test -p chargemesh-ocpp
 cargo test -p chargemesh-capability
 cargo test -p chargemesh-simulator
+cargo test -p chargemesh-diagnostics
 
 # View project structure
 tree -L 3
@@ -602,6 +619,12 @@ chargemesh capability --config station.json --format human --verbose
 # Run a simulation
 chargemesh simulate --target charger --scenario normal --duration 30
 
+# Diagnose a trace
+chargemesh diagnose --file trace.ocpp --verbose
+
+# Generate HTML report
+chargemesh diagnose --file trace.ocpp --format html --output report.html
+
 # List scenarios
 chargemesh simulate --list-scenarios
 
@@ -627,7 +650,7 @@ Charging infrastructure is a distributed state-machine problem. State transition
 
 ### Diagnostics as a First-Class Capability
 
-Protocol traces, state transitions, errors, and device events should be correlated into a single charging-session timeline.
+Protocol traces, state transitions, errors, and device events should be correlated into a single charging-session timeline. Root cause analysis should identify the actual problem, not just the symptom.
 
 ### Observability by Design
 
@@ -701,7 +724,7 @@ ChargeMesh aims to become a common software infrastructure layer for EV charging
 | **P2** | OCPP 1.6 Core | ✅ Complete |
 | **P3** | Capability Engine | ✅ Complete |
 | **P4** | Simulator | ✅ Complete |
-| P5 | Diagnostics Engine | 📋 Planned |
+| **P5** | Diagnostics Engine | ✅ Complete |
 | P6 | Observability Platform | 📋 Planned |
 | P7 | Web Inspector (Emerge Core + WASM) | 📋 Planned |
 | P8 | OCPI + Energy Integration | 📋 Planned |
@@ -729,7 +752,7 @@ Please open an issue before implementing a major architectural change.
 - OCPP 2.1 implementation
 - Additional vendor profiles (Alfen, Tritium, etc.)
 - Simulator scenarios
-- Diagnostics rules
+- Diagnostics rules and patterns
 - Documentation
 - Web Inspector (Emerge Core + WASM)
 - Testing
@@ -767,13 +790,13 @@ ChargeMesh builds upon the work of many standards bodies and open-source project
 **ChargeMesh: Making EV charging infrastructure programmable.**
 
 ```text
-                    ┌──────────────────┐
-                    │   ChargeMesh     │
-                    │                  │
-                    │  EV Charging     │
+                    ┌─────────────────┐
+                    │   ChargeMesh    │
+                    │                 │
+                    │  EV Charging    │
                     │  Interoperability│
-                    │  for the Future  │
-                    └──────────────────┘
+                    │  for the Future │
+                    └─────────────────┘
 ```
 
 ---
@@ -814,8 +837,18 @@ ChargeMesh builds upon the work of many standards bodies and open-source project
 - ✅ CLI command `simulate`
 - ✅ Unit, integration, and E2E tests
 
+### Phase 5 (Complete)
+- ✅ `chargemesh-diagnostics` — Diagnostics Engine
+- ✅ Timeline Collector with indexing
+- ✅ Pattern Analyzer (4 patterns)
+- ✅ Sequence Analyzer (2 sequences)
+- ✅ Performance Analyzer
+- ✅ Security Analyzer
+- ✅ Root Cause Analysis with confidence scoring
+- ✅ Report Generator (JSON, HTML)
+- ✅ CLI command `diagnose`
+- ✅ Unit, integration, and E2E tests
+
 ### Next Steps
-- Phase 5: Diagnostics Engine
 - Phase 6: Observability Platform
 - Phase 7: Web Inspector with Emerge Core + WASM
-```

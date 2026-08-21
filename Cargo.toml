@@ -5,6 +5,7 @@ members = [
     "crates/chargemesh-ocpp",
     "crates/chargemesh-capability",
     "crates/chargemesh-simulator",
+    "crates/chargemesh-diagnostics",
     "apps/chargemesh-cli",
 ]
 
@@ -15,6 +16,7 @@ chargemesh-ir = { path = "crates/chargemesh-ir" }
 chargemesh-ocpp = { path = "crates/chargemesh-ocpp" }
 chargemesh-capability = { path = "crates/chargemesh-capability" }
 chargemesh-simulator = { path = "crates/chargemesh-simulator" }
+chargemesh-diagnostics = { path = "crates/chargemesh-diagnostics" }
 
 # Apps
 chargemesh-cli = { path = "apps/chargemesh-cli" }
@@ -40,6 +42,11 @@ regex = "1.0"
 lazy_static = "1.4"
 rand = "0.8"
 rand_distr = "0.4"
+ndarray = "0.15"
+statrs = "0.16"
+petgraph = "0.6"
+handlebars = "4.0"
+serde_html = "0.2"
 
 [profile.release]
 lto = true

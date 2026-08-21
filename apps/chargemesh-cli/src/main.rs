@@ -15,7 +15,6 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// Parse and analyze an OCPP trace file
     Parse {
         #[arg(short, long)]
         file: PathBuf,
@@ -25,7 +24,6 @@ pub enum Commands {
         verbose: bool,
     },
 
-    /// Connect to a charger and capture traffic
     Capture {
         #[arg(short, long)]
         url: String,
@@ -35,7 +33,6 @@ pub enum Commands {
         duration: Option<u64>,
     },
 
-    /// Analyze capabilities of a charging station
     Capability {
         #[arg(short, long)]
         config: PathBuf,
@@ -45,42 +42,39 @@ pub enum Commands {
         verbose: bool,
     },
 
-    /// Run a simulation
     Simulate {
-        /// Simulation target (charger, ev, grid)
         #[arg(short, long)]
         target: String,
-
-        /// Protocol to use
         #[arg(short, long)]
         protocol: Option<String>,
-
-        /// Model of the device
         #[arg(short, long)]
         model: Option<String>,
-
-        /// Firmware version
         #[arg(short, long)]
         firmware: Option<String>,
-
-        /// Scenario to run (normal, network-failure, auth-failure, etc.)
         #[arg(short, long)]
         scenario: Option<String>,
-
-        /// Duration in seconds
         #[arg(short, long)]
         duration: Option<u64>,
-
-        /// Verbose output
         #[arg(short, long)]
         verbose: bool,
-
-        /// List available scenarios
         #[arg(long)]
         list_scenarios: bool,
     },
 
-    /// Show version information
+    Diagnose {
+        #[arg(short, long)]
+        file: PathBuf,
+
+        #[arg(short, long, default_value = "human")]
+        format: OutputFormat,
+
+        #[arg(short, long)]
+        verbose: bool,
+
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+
     Version,
 }
 
@@ -88,6 +82,7 @@ pub enum Commands {
 pub enum OutputFormat {
     Human,
     Json,
+    Html,
 }
 
 #[tokio::main]
@@ -120,6 +115,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         } => {
             run_simulation(target, protocol, model, firmware, scenario, duration, verbose, list_scenarios).await?;
         }
+        Commands::Diagnose { file, format, verbose, output } => {
+            run_diagnostics(file, format, verbose, output).await?;
+        }
         Commands::Version => {
             println!("ChargeMesh v{}", env!("CARGO_PKG_VERSION"));
         }
@@ -128,81 +126,165 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-async fn run_simulation(
-    target: String,
-    protocol: Option<String>,
-    model: Option<String>,
-    firmware: Option<String>,
-    scenario: Option<String>,
-    duration: Option<u64>,
+async fn run_diagnostics(
+    path: PathBuf,
+    format: OutputFormat,
     verbose: bool,
-    list_scenarios: bool,
+    output: Option<PathBuf>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    if list_scenarios {
-        println!("{}", "📋 Available Scenarios:".cyan());
-        println!("  • normal          - Normal charging session");
-        println!("  • network-failure - Network disconnection during charging");
-        println!("  • auth-failure    - Authorization failure");
-        println!("  • plug-and-charge - ISO 15118 Plug & Charge");
-        println!("  • v2g             - Vehicle-to-Grid bidirectional");
-        println!("  • certificate-failure - Certificate validation failure");
-        return Ok(());
+    use chargemesh_diagnostics::*;
+
+    println!("{}", format!("🔍 Running diagnostics on: {}", path.display()).cyan());
+
+    let content = std::fs::read_to_string(&path)?;
+    let lines: Vec<&str> = content.lines().collect();
+
+    let mut collector = TimelineCollector::new();
+
+    for line in lines {
+        if line.trim().is_empty() {
+            continue;
+        }
+        if let Ok(parsed) = chargemesh_ocpp::v16::parse_ocpp_message(line) {
+            let entry = TimelineEntry {
+                id: uuid::Uuid::new_v4().to_string(),
+                timestamp: parsed.timestamp,
+                event_type: match parsed.message {
+                    chargemesh_ocpp::common::OcppMessage::Call(call) => {
+                        match call.action.as_str() {
+                            "BootNotification" => EventType::BootNotification,
+                            "Heartbeat" => EventType::Heartbeat,
+                            "StatusNotification" => EventType::StatusNotification,
+                            "Authorize" => EventType::Authorize,
+                            "StartTransaction" => EventType::StartTransaction,
+                            "StopTransaction" => EventType::StopTransaction,
+                            "MeterValues" => EventType::MeterValues,
+                            "RemoteStartTransaction" => EventType::RemoteStart,
+                            "RemoteStopTransaction" => EventType::RemoteStop,
+                            "SetChargingProfile" => EventType::SetChargingProfile,
+                            "Reset" => EventType::Reset,
+                            "ChangeConfiguration" => EventType::ChangeConfiguration,
+                            "GetConfiguration" => EventType::GetConfiguration,
+                            _ => EventType::Info,
+                        }
+                    }
+                    chargemesh_ocpp::common::OcppMessage::CallResult(_) => EventType::Info,
+                    chargemesh_ocpp::common::OcppMessage::CallError(_) => EventType::Error,
+                },
+                component: Component::Protocol,
+                status: match parsed.message {
+                    chargemesh_ocpp::common::OcppMessage::CallError(_) => EntryStatus::Failure,
+                    _ => EntryStatus::Success,
+                },
+                details: serde_json::json!({
+                    "raw": parsed.raw,
+                    "direction": format!("{:?}", parsed.direction),
+                }),
+                session_id: None,
+                station_id: None,
+                connector_id: None,
+                transaction_id: None,
+                tags: Vec::new(),
+            };
+            collector.add_entry(entry).await?;
+        }
     }
 
-    println!("{}", format!("🎮 Running simulation: {}", target).cyan());
-
-    let config = chargemesh_simulator::SimulatorConfig {
-        mode: chargemesh_simulator::SimulationMode::Normal,
-        speed: 1.0,
-        seed: None,
-        max_duration: duration.map(chrono::Duration::seconds),
-        verbose,
-        protocol: protocol.unwrap_or_else(|| "ocpp-1.6".to_string()),
-        station_config: chargemesh_simulator::StationSimConfig {
-            vendor: model.clone().unwrap_or_else(|| "ABB".to_string()),
-            model: model.clone().unwrap_or_else(|| "Terra 54".to_string()),
-            firmware_version: firmware.clone().unwrap_or_else(|| "1.2.3".to_string()),
-            connector_count: 2,
-            max_power: 50000,
-            has_iso15118: true,
-            has_v2g: false,
-        },
-        ev_config: chargemesh_simulator::EvSimConfig {
-            battery_capacity: 75000,
-            initial_soc: 20,
-            target_soc: 80,
-            supports_plug_and_charge: true,
-            supports_v2g: false,
-            max_power: 22000,
-        },
-        grid_config: chargemesh_simulator::GridSimConfig {
-            available_capacity: 100000,
-            max_power: 100000,
-            grid_load_percentage: 50,
-            has_solar: true,
-            has_battery_storage: false,
-        },
+    let engine = DiagnosticsEngine::default();
+    let context = DiagnosticContext {
+        station_id: None,
+        session_id: None,
+        time_range: None,
+        protocol: Some("OCPP 1.6".to_string()),
+        vendor: None,
+        model: None,
+        firmware_version: None,
     };
 
-    println!("  Protocol: {}", config.protocol);
-    println!("  Station: {} {}", config.station_config.vendor, config.station_config.model);
-    println!("  Scenario: {}", scenario.as_deref().unwrap_or("normal"));
+    let report = engine.run_diagnostics(&context).await?;
 
-    // Run the scenario
-    let scenario_runner = chargemesh_simulator::core::ScenarioRunner::new();
-    let scenario = match scenario.as_deref() {
-        Some("normal") => chargemesh_simulator::core::Scenarios::normal_session(),
-        Some("network-failure") => chargemesh_simulator::core::Scenarios::network_failure(),
-        Some("auth-failure") => chargemesh_simulator::core::Scenarios::auth_failure(),
-        Some("plug-and-charge") => chargemesh_simulator::core::Scenarios::plug_and_charge(),
-        Some("v2g") => chargemesh_simulator::core::Scenarios::v2g(),
-        Some("certificate-failure") => chargemesh_simulator::core::Scenarios::certificate_failure(),
-        _ => chargemesh_simulator::core::Scenarios::normal_session(),
-    };
+    match format {
+        OutputFormat::Human => render_human_report(&report, verbose),
+        OutputFormat::Json => {
+            let json = serde_json::to_string_pretty(&report)?;
+            if let Some(path) = output {
+                std::fs::write(path, json)?;
+            } else {
+                println!("{}", json);
+            }
+        }
+        OutputFormat::Html => {
+            let html = engine.report_generator.render_html(&report)?;
+            if let Some(path) = output {
+                std::fs::write(path, html)?;
+            } else {
+                println!("{}", html);
+            }
+        }
+    }
 
-    println!("{}", "🔄 Running scenario...".yellow());
-    scenario_runner.run(&scenario).await?;
-
-    println!("{}", "✅ Simulation completed successfully".green());
     Ok(())
+}
+
+fn render_human_report(report: &chargemesh_diagnostics::report::DiagnosticReport, verbose: bool) {
+    println!("\n{}", "═".repeat(60).bold().yellow());
+    println!("{}", "  🔍 DIAGNOSTIC REPORT".bold().white());
+    println!("{}", "═".repeat(60).bold().yellow());
+
+    println!("\n{}", "📊 SUMMARY".bold().cyan());
+    println!("  {}", report.summary);
+
+    if verbose {
+        println!("\n{}", "📈 STATISTICS".bold().cyan());
+        println!("  Total Events: {}", report.statistics.total_entries);
+        println!("  Successful:   {}", report.statistics.success_count);
+        println!("  Failed:       {}", report.statistics.failure_count);
+        println!("  Timeouts:     {}", report.statistics.timeout_count);
+        println!("  Errors:       {}", report.statistics.error_count);
+        println!("  Warnings:     {}", report.statistics.warnings_count);
+    }
+
+    if !report.root_causes.is_empty() {
+        println!("\n{}", "🔍 ROOT CAUSES".bold().red());
+        for (i, rc) in report.root_causes.iter().enumerate() {
+            println!("\n  {}. {}", i + 1, rc.title.red().bold());
+            println!("     Confidence: {:.0}%", rc.confidence * 100.0);
+            println!("     {}", rc.description);
+            println!("\n     Possible causes:");
+            for cause in &rc.causes {
+                println!("       • {} (probability: {:.0}%)", cause.description, cause.probability * 100.0);
+                println!("         💡 {}", cause.mitigation);
+            }
+        }
+    }
+
+    if !report.recommendations.is_empty() {
+        println!("\n{}", "💡 RECOMMENDATIONS".bold().green());
+        for rec in &report.recommendations {
+            println!("  • {}", rec.action.green());
+            println!("    {}", rec.description.dimmed());
+        }
+    }
+
+    if verbose && !report.timeline.is_empty() {
+        println!("\n{}", "⏱️ TIMELINE (last 20 events)".bold().magenta());
+        for entry in report.timeline.iter().rev().take(20).rev() {
+            let status = match entry.status {
+                EntryStatus::Success => "✅".green(),
+                EntryStatus::Failure => "❌".red(),
+                EntryStatus::Timeout => "⏰".yellow(),
+                EntryStatus::Warning => "⚠️".yellow(),
+                _ => "ℹ️".cyan(),
+            };
+            println!(
+                "  {} [{}] {:?} {:?}",
+                entry.timestamp.format("%H:%M:%S"),
+                status,
+                entry.event_type,
+                entry.component
+            );
+        }
+    }
+
+    println!("\n{}", "═".repeat(60).bold().yellow());
 }
