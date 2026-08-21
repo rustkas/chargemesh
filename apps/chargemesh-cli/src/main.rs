@@ -64,15 +64,29 @@ pub enum Commands {
     Diagnose {
         #[arg(short, long)]
         file: PathBuf,
-
         #[arg(short, long, default_value = "human")]
         format: OutputFormat,
+        #[arg(short, long)]
+        verbose: bool,
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+
+    Observe {
+        #[arg(short, long)]
+        station_id: Option<String>,
+
+        #[arg(short, long)]
+        session_id: Option<String>,
+
+        #[arg(short, long)]
+        duration: Option<u64>,
 
         #[arg(short, long)]
         verbose: bool,
 
-        #[arg(short, long)]
-        output: Option<PathBuf>,
+        #[arg(long)]
+        follow: bool,
     },
 
     Version,
@@ -118,6 +132,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Diagnose { file, format, verbose, output } => {
             run_diagnostics(file, format, verbose, output).await?;
         }
+        Commands::Observe {
+            station_id,
+            session_id,
+            duration,
+            verbose,
+            follow,
+        } => {
+            run_observability(station_id, session_id, duration, verbose, follow).await?;
+        }
         Commands::Version => {
             println!("ChargeMesh v{}", env!("CARGO_PKG_VERSION"));
         }
@@ -126,165 +149,51 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-async fn run_diagnostics(
-    path: PathBuf,
-    format: OutputFormat,
+async fn run_observability(
+    station_id: Option<String>,
+    session_id: Option<String>,
+    duration: Option<u64>,
     verbose: bool,
-    output: Option<PathBuf>,
+    follow: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    use chargemesh_diagnostics::*;
+    use chargemesh_observability::*;
 
-    println!("{}", format!("🔍 Running diagnostics on: {}", path.display()).cyan());
+    println!("{}", "🔭 Observability Platform".cyan());
 
-    let content = std::fs::read_to_string(&path)?;
-    let lines: Vec<&str> = content.lines().collect();
+    let config = PlatformConfig::default();
+    let platform = ObservabilityPlatform::new(config);
+    platform.start().await?;
 
-    let mut collector = TimelineCollector::new();
-
-    for line in lines {
-        if line.trim().is_empty() {
-            continue;
-        }
-        if let Ok(parsed) = chargemesh_ocpp::v16::parse_ocpp_message(line) {
-            let entry = TimelineEntry {
-                id: uuid::Uuid::new_v4().to_string(),
-                timestamp: parsed.timestamp,
-                event_type: match parsed.message {
-                    chargemesh_ocpp::common::OcppMessage::Call(call) => {
-                        match call.action.as_str() {
-                            "BootNotification" => EventType::BootNotification,
-                            "Heartbeat" => EventType::Heartbeat,
-                            "StatusNotification" => EventType::StatusNotification,
-                            "Authorize" => EventType::Authorize,
-                            "StartTransaction" => EventType::StartTransaction,
-                            "StopTransaction" => EventType::StopTransaction,
-                            "MeterValues" => EventType::MeterValues,
-                            "RemoteStartTransaction" => EventType::RemoteStart,
-                            "RemoteStopTransaction" => EventType::RemoteStop,
-                            "SetChargingProfile" => EventType::SetChargingProfile,
-                            "Reset" => EventType::Reset,
-                            "ChangeConfiguration" => EventType::ChangeConfiguration,
-                            "GetConfiguration" => EventType::GetConfiguration,
-                            _ => EventType::Info,
-                        }
-                    }
-                    chargemesh_ocpp::common::OcppMessage::CallResult(_) => EventType::Info,
-                    chargemesh_ocpp::common::OcppMessage::CallError(_) => EventType::Error,
-                },
-                component: Component::Protocol,
-                status: match parsed.message {
-                    chargemesh_ocpp::common::OcppMessage::CallError(_) => EntryStatus::Failure,
-                    _ => EntryStatus::Success,
-                },
-                details: serde_json::json!({
-                    "raw": parsed.raw,
-                    "direction": format!("{:?}", parsed.direction),
-                }),
-                session_id: None,
-                station_id: None,
-                connector_id: None,
-                transaction_id: None,
-                tags: Vec::new(),
-            };
-            collector.add_entry(entry).await?;
-        }
+    if let Some(sid) = station_id {
+        println!("📍 Monitoring station: {}", sid);
+        // Collect station-specific metrics
     }
 
-    let engine = DiagnosticsEngine::default();
-    let context = DiagnosticContext {
-        station_id: None,
-        session_id: None,
-        time_range: None,
-        protocol: Some("OCPP 1.6".to_string()),
-        vendor: None,
-        model: None,
-        firmware_version: None,
-    };
-
-    let report = engine.run_diagnostics(&context).await?;
-
-    match format {
-        OutputFormat::Human => render_human_report(&report, verbose),
-        OutputFormat::Json => {
-            let json = serde_json::to_string_pretty(&report)?;
-            if let Some(path) = output {
-                std::fs::write(path, json)?;
-            } else {
-                println!("{}", json);
-            }
-        }
-        OutputFormat::Html => {
-            let html = engine.report_generator.render_html(&report)?;
-            if let Some(path) = output {
-                std::fs::write(path, html)?;
-            } else {
-                println!("{}", html);
-            }
-        }
+    if let Some(sid) = session_id {
+        println!("📍 Monitoring session: {}", sid);
+        // Collect session-specific metrics
     }
 
+    if follow {
+        println!("{}", "🔄 Following live updates... (Press Ctrl+C to stop)".yellow());
+
+        let start = std::time::Instant::now();
+        while let Some(dur) = duration {
+            if start.elapsed() >= std::time::Duration::from_secs(dur) {
+                break;
+            }
+            let data = platform.get_dashboard_data().await;
+            let rendered = platform.dashboard.render(&data).await?;
+            print!("\x1B[2J\x1B[1;1H");
+            println!("{}", rendered);
+            tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+        }
+    } else {
+        let data = platform.get_dashboard_data().await;
+        let rendered = platform.dashboard.render(&data).await?;
+        println!("{}", rendered);
+    }
+
+    platform.stop().await?;
     Ok(())
-}
-
-fn render_human_report(report: &chargemesh_diagnostics::report::DiagnosticReport, verbose: bool) {
-    println!("\n{}", "═".repeat(60).bold().yellow());
-    println!("{}", "  🔍 DIAGNOSTIC REPORT".bold().white());
-    println!("{}", "═".repeat(60).bold().yellow());
-
-    println!("\n{}", "📊 SUMMARY".bold().cyan());
-    println!("  {}", report.summary);
-
-    if verbose {
-        println!("\n{}", "📈 STATISTICS".bold().cyan());
-        println!("  Total Events: {}", report.statistics.total_entries);
-        println!("  Successful:   {}", report.statistics.success_count);
-        println!("  Failed:       {}", report.statistics.failure_count);
-        println!("  Timeouts:     {}", report.statistics.timeout_count);
-        println!("  Errors:       {}", report.statistics.error_count);
-        println!("  Warnings:     {}", report.statistics.warnings_count);
-    }
-
-    if !report.root_causes.is_empty() {
-        println!("\n{}", "🔍 ROOT CAUSES".bold().red());
-        for (i, rc) in report.root_causes.iter().enumerate() {
-            println!("\n  {}. {}", i + 1, rc.title.red().bold());
-            println!("     Confidence: {:.0}%", rc.confidence * 100.0);
-            println!("     {}", rc.description);
-            println!("\n     Possible causes:");
-            for cause in &rc.causes {
-                println!("       • {} (probability: {:.0}%)", cause.description, cause.probability * 100.0);
-                println!("         💡 {}", cause.mitigation);
-            }
-        }
-    }
-
-    if !report.recommendations.is_empty() {
-        println!("\n{}", "💡 RECOMMENDATIONS".bold().green());
-        for rec in &report.recommendations {
-            println!("  • {}", rec.action.green());
-            println!("    {}", rec.description.dimmed());
-        }
-    }
-
-    if verbose && !report.timeline.is_empty() {
-        println!("\n{}", "⏱️ TIMELINE (last 20 events)".bold().magenta());
-        for entry in report.timeline.iter().rev().take(20).rev() {
-            let status = match entry.status {
-                EntryStatus::Success => "✅".green(),
-                EntryStatus::Failure => "❌".red(),
-                EntryStatus::Timeout => "⏰".yellow(),
-                EntryStatus::Warning => "⚠️".yellow(),
-                _ => "ℹ️".cyan(),
-            };
-            println!(
-                "  {} [{}] {:?} {:?}",
-                entry.timestamp.format("%H:%M:%S"),
-                status,
-                entry.event_type,
-                entry.component
-            );
-        }
-    }
-
-    println!("\n{}", "═".repeat(60).bold().yellow());
 }

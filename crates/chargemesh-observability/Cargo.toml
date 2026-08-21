@@ -1,0 +1,45 @@
+[package]
+name = "chargemesh-observability"
+version = "0.1.0"
+edition = "2021"
+authors = ["ChargeMesh Team"]
+description = "Observability Platform for ChargeMesh"
+license = "Apache-2.0"
+repository = "https://github.com/rustkas/chargemesh"
+
+[dependencies]
+chargemesh-core = { path = "../chargemesh-core" }
+chargemesh-ir = { path = "../chargemesh-ir" }
+chargemesh-ocpp = { path = "../chargemesh-ocpp" }
+chargemesh-capability = { path = "../chargemesh-capability" }
+chargemesh-simulator = { path = "../chargemesh-simulator" }
+chargemesh-diagnostics = { path = "../chargemesh-diagnostics" }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+
+# Async
+tokio = { workspace = true }
+async-trait = { workspace = true }
+
+# Utilities
+chrono = { workspace = true }
+uuid = { workspace = true }
+thiserror = { workspace = true }
+derive_more = { workspace = true }
+tracing = { workspace = true }
+
+# Metrics
+prometheus = { workspace = true }
+
+# Dashboard
+ratatui = { workspace = true }
+crossterm = { workspace = true }
+
+# Graph
+petgraph = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = "1.0"
