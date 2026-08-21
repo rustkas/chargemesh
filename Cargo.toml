@@ -8,6 +8,7 @@ members = [
     "crates/chargemesh-diagnostics",
     "crates/chargemesh-observability",
     "crates/chargemesh-integration",
+    "crates/chargemesh-cloud",
     "apps/chargemesh-cli",
 ]
 
@@ -21,6 +22,7 @@ chargemesh-simulator = { path = "crates/chargemesh-simulator" }
 chargemesh-diagnostics = { path = "crates/chargemesh-diagnostics" }
 chargemesh-observability = { path = "crates/chargemesh-observability" }
 chargemesh-integration = { path = "crates/chargemesh-integration" }
+chargemesh-cloud = { path = "crates/chargemesh-cloud" }
 
 # Apps
 chargemesh-cli = { path = "apps/chargemesh-cli" }
@@ -58,7 +60,11 @@ reqwest = { version = "0.11", features = ["json"] }
 axum = { version = "0.6", features = ["ws"] }
 tower = "0.4"
 tower-http = { version = "0.4", features = ["cors", "trace", "auth"] }
-lp_solver = "0.2"
+sqlx = { version = "0.7", features = ["runtime-tokio-native-tls", "postgres", "uuid", "chrono"] }
+redis = { version = "0.23", features = ["tokio-comp", "json"] }
+jsonwebtoken = "9.0"
+argon2 = "0.5"
+oauth2 = "4.0"
 
 [profile.release]
 lto = true

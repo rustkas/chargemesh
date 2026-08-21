@@ -1,0 +1,49 @@
+[package]
+name = "chargemesh-cloud"
+version = "0.1.0"
+edition = "2021"
+authors = ["ChargeMesh Team"]
+description = "ChargeMesh Cloud Platform"
+license = "Apache-2.0"
+repository = "https://github.com/rustkas/chargemesh"
+
+[dependencies]
+chargemesh-core = { path = "../chargemesh-core" }
+chargemesh-ir = { path = "../chargemesh-ir" }
+chargemesh-ocpp = { path = "../chargemesh-ocpp" }
+chargemesh-capability = { path = "../chargemesh-capability" }
+chargemesh-diagnostics = { path = "../chargemesh-diagnostics" }
+chargemesh-observability = { path = "../chargemesh-observability" }
+chargemesh-integration = { path = "../chargemesh-integration" }
+
+# Web Framework
+axum = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+
+# Database
+sqlx = { workspace = true }
+redis = { workspace = true }
+
+# Auth
+jsonwebtoken = { workspace = true }
+argon2 = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+
+# Async
+tokio = { workspace = true }
+async-trait = { workspace = true }
+
+# Utilities
+chrono = { workspace = true }
+uuid = { workspace = true }
+thiserror = { workspace = true }
+derive_more = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = "1.0"
