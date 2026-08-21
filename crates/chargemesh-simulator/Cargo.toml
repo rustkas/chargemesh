@@ -1,0 +1,36 @@
+[package]
+name = "chargemesh-simulator"
+version = "0.1.0"
+edition = "2021"
+authors = ["ChargeMesh Team"]
+description = "EV Charging Infrastructure Simulator"
+license = "Apache-2.0"
+repository = "https://github.com/rustkas/chargemesh"
+
+[dependencies]
+chargemesh-core = { path = "../chargemesh-core" }
+chargemesh-ir = { path = "../chargemesh-ir" }
+chargemesh-ocpp = { path = "../chargemesh-ocpp" }
+chargemesh-capability = { path = "../chargemesh-capability" }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+
+# Async
+tokio = { workspace = true }
+async-trait = { workspace = true }
+futures-util = { workspace = true }
+
+# Utilities
+chrono = { workspace = true }
+uuid = { workspace = true }
+thiserror = { workspace = true }
+derive_more = { workspace = true }
+tracing = { workspace = true }
+rand = { workspace = true }
+rand_distr = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = "1.0"

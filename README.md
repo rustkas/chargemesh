@@ -199,6 +199,10 @@ ChargeMesh uses **Rust** as its primary language for the core platform, with **E
 │                               │  Rule-based evaluation                     │
 │                               │  Vendor profiles (ABB, Siemens)            │
 ├────────────────────────────────────────────────────────────────────────────┤
+│  SIMULATOR                    │  EV │ EVSE │ CSMS │ OCPI │ Grid            │
+│                               │  Fault injection │ Scenarios               │
+│                               │  Normal │ Network Failure │ V2G            │
+├────────────────────────────────────────────────────────────────────────────┤
 │  DATA LAYER                   │  PostgreSQL │ Redis │ NATS/Kafka           │
 ├────────────────────────────────────────────────────────────────────────────┤
 │  INFRASTRUCTURE               │  Docker │ Kubernetes │ Terraform           │
@@ -231,6 +235,7 @@ ChargeMesh uses **Rust** as its primary language for the core platform, with **E
 | **Code Reuse** | Same Rust code for backend and frontend |
 | **No JavaScript** | No runtime overhead for protocol logic |
 | **Capability Engine** | Multi-factor detection with rule-based evaluation |
+| **Simulator** | Full ecosystem simulation without physical hardware |
 
 ---
 
@@ -244,7 +249,7 @@ ChargeMesh follows an open-core business model:
 │  • Protocol libraries (OCPP 1.6, 2.0.1, 2.1)                               │
 │  • Universal EV Model (EV-IR)                                              │
 │  • Capability Engine                                                       │
-│  • Simulator                                                               │
+│  • Simulator (EV, EVSE, CSMS, OCPI, Grid)                                  │
 │  • Local diagnostics                                                       │
 │  • SDK (Rust)                                                              │
 │  • CLI + Web Inspector (Emerge Core)                                       │
@@ -283,7 +288,7 @@ ChargeMesh follows an open-core business model:
 
 ## Project Status
 
-> **Early development — Phase 3 Complete**
+> **Early development — Phase 4 Complete**
 
 ChargeMesh is currently in active research and development. The APIs, EV-IR model, protocol adapters, and architecture are expected to evolve significantly.
 
@@ -318,7 +323,15 @@ ChargeMesh is currently in active research and development. The APIs, EV-IR mode
 | P3 | Rule engine with conditions and actions | ✅ Complete |
 | P3 | Vendor profiles (ABB, Siemens) | ✅ Complete |
 | P3 | CLI command `capability` | ✅ Complete |
-| P4 | Simulator | 📋 Planned |
+| **P4** | **Simulator** | ✅ **Complete** |
+| P4 | EV Simulator (battery, ISO 15118) | ✅ Complete |
+| P4 | EVSE Simulator (station, connectors) | ✅ Complete |
+| P4 | CSMS Simulator | ✅ Complete |
+| P4 | OCPI Simulator | ✅ Complete |
+| P4 | Grid Simulator | ✅ Complete |
+| P4 | Fault injector | ✅ Complete |
+| P4 | Scenario system (6 scenarios) | ✅ Complete |
+| P4 | CLI command `simulate` | ✅ Complete |
 | P5 | Diagnostics Engine | 📋 Planned |
 | P6 | Observability Platform | 📋 Planned |
 | P7 | Web Inspector (Emerge Core + WASM) | 📋 Planned |
@@ -355,48 +368,45 @@ chargemesh capture --url ws://charger:9000 --output captured.ocpp --duration 30
 # Analyze capabilities of a charging station
 chargemesh capability --config station.json --format human --verbose
 
+# Run a simulation
+chargemesh simulate --target charger --scenario normal
+
+# List available scenarios
+chargemesh simulate --list-scenarios
+
 # Show version
 chargemesh version
 ```
 
-### Capability Configuration Example
+---
 
-```json
-{
-  "station_id": "CP-001",
-  "vendor": {
-    "name": "ABB",
-    "id": "ABB",
-    "known_models": ["Terra 54", "Terra HP"]
-  },
-  "model": "Terra 54",
-  "firmware": {
-    "version": "2.1.0",
-    "build_date": "2024-01-15"
-  },
-  "protocol": {
-    "name": "OCPP",
-    "version": "2.0.1",
-    "transport": "WebSocket",
-    "security_profile": "TLS"
-  },
-  "configuration": {
-    "certificate_enabled": true,
-    "max_power": 50000
-  },
-  "runtime": {
-    "is_online": true,
-    "is_booted": true,
-    "active_sessions": 0,
-    "temperature": 35.0,
-    "load_percentage": 50
-  },
-  "hardware_version": "2.0",
-  "serial_number": "SN12345"
-}
+## Examples
+
+### 1. Parse OCPP Trace
+
+```bash
+chargemesh parse --file trace.ocpp --verbose
 ```
 
-### Capability Output Example
+```text
+📂 Parsing file: trace.ocpp
+📊 Parsed 42 messages
+
+📝 Message Timeline
+  12:01:03 ⬅️  Call(BootNotification)
+  12:01:05 ➡️  CallResult(1)
+  12:03:21 ⬅️  Call(Authorize)
+  12:03:22 ➡️  CallResult(3)
+  12:03:25 ⬅️  Call(StartTransaction)
+  12:03:25 ➡️  CallResult(4)
+  12:03:26 ⬅️  Call(StatusNotification)
+```
+
+### 2. Analyze Capabilities
+
+```bash
+chargemesh capability --config station.json
+```
 
 ```text
 ═══════════════════════════════════════════════════════════
@@ -405,275 +415,62 @@ chargemesh version
 
 📊 CAPABILITIES
   • BasicCharging               ✅ Supported
-  • ConfigurationManagement     ✅ Supported
-  • OCPP1_6                     ✅ Supported
-  • OCPP2_0_1                   ✅ Supported
-  • OCPP2_1                     ❌ Not supported
-  • PlugAndCharge               ✅ Supported
-  • RemoteDiagnostics           ✅ Supported
-  • RemoteFirmwareUpdate        ✅ Supported
-  • RemoteReset                 ✅ Supported
-  • Reservation                 ✅ Supported
-  • RFIDAuthorization           ✅ Supported
   • SmartCharging               ✅ Supported
+  • OCPP2_0_1                   ✅ Supported
+  • PlugAndCharge               ✅ Supported
+  • V2G                         ❌ Not supported
+  • Reservation                 ✅ Supported
+  • RemoteDiagnostics           ✅ Supported
 
 💡 SUMMARY
   Total: 12
   Supported: 10
   Limited: 2
-
-═══════════════════════════════════════════════════════════
 ```
 
----
+### 3. Run Simulation
 
-## Example
-
-### Backend: Analyze station capabilities
-
-```rust
-use chargemesh_capability::*;
-use std::collections::HashMap;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut config = HashMap::new();
-    config.insert("certificate_enabled".to_string(), serde_json::json!(true));
-
-    let context = CapabilityContext {
-        station_id: "CP-001".to_string(),
-        protocol: ProtocolInfo {
-            name: ProtocolName::OCPP,
-            version: "2.0.1".to_string(),
-            transport: "WebSocket".to_string(),
-            security_profile: "TLS".to_string(),
-        },
-        vendor: VendorInfo {
-            name: "ABB".to_string(),
-            id: Some("ABB".to_string()),
-            known_models: vec!["Terra 54".to_string()],
-        },
-        firmware: FirmwareInfo {
-            version: "2.1.0".to_string(),
-            build_date: Some("2024-01-15".to_string()),
-            checksum: None,
-            compatibility: vec![],
-        },
-        configuration: config,
-        runtime: RuntimeState {
-            is_online: true,
-            is_booted: true,
-            active_sessions: 0,
-            total_energy_delivered: 1000,
-            uptime_seconds: 3600,
-            temperature: Some(35.0),
-            load_percentage: Some(50),
-        },
-        model: "Terra 54".to_string(),
-        hardware_version: Some("2.0".to_string()),
-        serial_number: Some("SN12345".to_string()),
-    };
-
-    let engine = CapabilityEngine::new();
-    let capabilities = engine.determine_capabilities(&context).await?;
-
-    // Check if station supports smart charging
-    if capabilities.is_supported(&CapabilityType::SmartCharging) {
-        println!("✅ Station supports Smart Charging");
-    }
-
-    // Get capability details as JSON
-    let json = capabilities.to_json();
-    println!("{}", serde_json::to_string_pretty(&json)?);
-
-    Ok(())
-}
+```bash
+chargemesh simulate --target charger --scenario network-failure --verbose
 ```
 
-### Frontend: Web Inspector with Emerge Core
+```text
+🎮 Running simulation: charger
+  Protocol: ocpp-1.6
+  Station: ABB Terra 54
+  Scenario: network-failure
 
-```typescript
-// web/inspector/src/main.ts — Emerge Core + WASM
+🔄 Running scenario...
+Step 1: ConnectEV
+🔌 Connecting EV...
+Step 2: Authorize { token: "RFID-123" }
+🔑 Authorizing with token: RFID-123
+Step 3: StartCharging
+⚡ Starting charging...
+Step 4: InjectFault { fault: NetworkDisconnect }
+💥 Injecting fault: NetworkDisconnect
+Step 5: WaitFor { condition: NetworkReconnected }
+⏳ Waiting for: NetworkReconnected
+Step 6: StopCharging
+⏹️ Stopping charging...
 
-import {
-  signal,
-  computed,
-  effect,
-  createOwner,
-  runWithOwner,
-} from '@emerge/core';
-
-// Import WASM modules
-import init, { parse_ocpp_message, analyze_capabilities } from './wasm/chargemesh_wasm.js';
-
-// Reactive state
-const trace = signal<ParsedMessage[]>([]);
-const capabilities = signal<CapabilitySet | null>(null);
-const selectedIndex = signal<number | null>(null);
-
-// Computed: filtered messages
-const filteredMessages = computed(() => {
-  return trace.value;
-});
-
-// Effect: update DOM when trace changes
-const owner = createOwner();
-runWithOwner(owner, () => {
-  effect(() => {
-    const messages = filteredMessages.value;
-    const container = document.getElementById('timeline');
-    if (container) {
-      container.innerHTML = messages.map((msg, i) => `
-        <div class="message ${i === selectedIndex.value ? 'selected' : ''}"
-             data-index="${i}">
-          <span class="time">${msg.timestamp}</span>
-          <span class="direction">${msg.direction}</span>
-          <span class="content">${msg.action}</span>
-        </div>
-      `).join('');
-    }
-  });
-});
-
-// Effect: update capability display
-runWithOwner(owner, () => {
-  effect(() => {
-    const caps = capabilities.value;
-    const container = document.getElementById('capabilities');
-    if (container && caps) {
-      container.innerHTML = Object.entries(caps).map(([key, value]) => `
-        <div class="capability ${value.supported ? 'supported' : 'unsupported'}">
-          <span class="name">${key}</span>
-          <span class="status">${value.supported ? '✅' : '❌'}</span>
-        </div>
-      `).join('');
-    }
-  });
-});
-
-// Load trace file and analyze capabilities
-document.getElementById('load-btn')?.addEventListener('click', async () => {
-  const file = (document.getElementById('file-input') as HTMLInputElement).files?.[0];
-  if (!file) return;
-
-  const content = await file.text();
-  const lines = content.split('\n');
-  const parsed: ParsedMessage[] = [];
-
-  for (const line of lines) {
-    if (line.trim()) {
-      const msg = parse_ocpp_message(line);
-      if (msg) parsed.push(msg);
-    }
-  }
-
-  trace.value = parsed;
-
-  // Analyze capabilities from the trace
-  const caps = analyze_capabilities(parsed);
-  capabilities.value = caps;
-});
-
-// Initialize WASM
-await init();
-
-// Cleanup on page unload
-window.addEventListener('beforeunload', () => {
-  owner.dispose();
-});
+✅ Simulation completed successfully
 ```
 
-### Custom Element for OCPP Inspector with Capability Display
+### 4. List Scenarios
 
-```typescript
-// web/inspector/src/components/ocpp-inspector.ts
+```bash
+chargemesh simulate --list-scenarios
+```
 
-import { signal, effect, createOwner, runWithOwner } from '@emerge/core';
-
-class OcppInspector extends HTMLElement {
-  private owner = createOwner();
-  private trace = signal<ParsedMessage[]>([]);
-  private capabilities = signal<CapabilitySet | null>(null);
-
-  connectedCallback() {
-    this.render();
-    this.setupEffects();
-  }
-
-  disconnectedCallback() {
-    this.owner.dispose();
-  }
-
-  private render() {
-    this.innerHTML = `
-      <div class="inspector">
-        <header>
-          <h1>⚡ OCPP Inspector</h1>
-          <div class="actions">
-            <input type="file" id="load-trace" accept=".ocpp,.txt">
-            <button id="analyze-btn">🔍 Analyze Capabilities</button>
-          </div>
-        </header>
-        <main>
-          <div class="panels">
-            <div class="panel" id="timeline-panel">
-              <h2>📊 Timeline</h2>
-              <div id="timeline"></div>
-            </div>
-            <div class="panel" id="capability-panel">
-              <h2>🔧 Capabilities</h2>
-              <div id="capabilities"></div>
-            </div>
-          </div>
-        </main>
-      </div>
-    `;
-
-    // File load handler
-    this.querySelector('#load-trace')?.addEventListener('change', async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const content = await file.text();
-        // Parse and update trace
-      }
-    });
-
-    // Analyze button handler
-    this.querySelector('#analyze-btn')?.addEventListener('click', async () => {
-      // Use WASM to analyze capabilities from current trace
-    });
-  }
-
-  private setupEffects() {
-    runWithOwner(this.owner, () => {
-      effect(() => {
-        const messages = this.trace.value;
-        const container = this.querySelector('#timeline');
-        if (container) {
-          container.innerHTML = messages.map(m =>
-            `<div>${m.timestamp} ${m.action}</div>`
-          ).join('');
-        }
-      });
-    });
-
-    runWithOwner(this.owner, () => {
-      effect(() => {
-        const caps = this.capabilities.value;
-        const container = this.querySelector('#capabilities');
-        if (container && caps) {
-          container.innerHTML = Object.entries(caps).map(([key, value]) =>
-            `<div class="cap ${value.supported ? 'ok' : 'fail'}">
-              ${key}: ${value.supported ? '✅' : '❌'}
-            </div>`
-          ).join('');
-        }
-      });
-    });
-  }
-}
-
-customElements.define('ocpp-inspector', OcppInspector);
+```text
+📋 Available Scenarios:
+  • normal          - Normal charging session
+  • network-failure - Network disconnection during charging
+  • auth-failure    - Authorization failure
+  • plug-and-charge - ISO 15118 Plug & Charge
+  • v2g             - Vehicle-to-Grid bidirectional
+  • certificate-failure - Certificate validation failure
 ```
 
 ---
@@ -694,133 +491,56 @@ chargemesh/
 │   └── error-taxonomy.md                      # Error taxonomy (ChargeX MREC)
 ├── crates/
 │   ├── chargemesh-core/                       # Core types & utilities
-│   │   ├── Cargo.toml
-│   │   └── src/
-│   │       ├── lib.rs
-│   │       ├── types.rs                       # Power, Energy, Duration, etc.
-│   │       ├── error.rs                       # CoreError, CoreResult
-│   │       ├── ident.rs                       # Id, StationId, EvseId, etc.
-│   │       ├── time.rs                        # Timestamp, TimeRange
-│   │       ├── crypto.rs                      # SHA256Hash, generate_token
-│   │       └── config.rs                      # Configuration utilities
-│   │
 │   ├── chargemesh-ir/                         # EV-IR model
-│   │   ├── Cargo.toml
-│   │   └── src/
-│   │       ├── lib.rs
-│   │       ├── network.rs                     # ChargingNetwork
-│   │       ├── station.rs                     # ChargingStation
-│   │       ├── evse.rs                        # EVSE
-│   │       ├── connector.rs                   # Connector
-│   │       ├── vehicle.rs                     # Vehicle
-│   │       ├── session.rs                     # ChargingSession
-│   │       ├── transaction.rs                 # Transaction
-│   │       ├── meter.rs                       # Meter, MeterValue
-│   │       ├── tariff.rs                      # Tariff
-│   │       ├── authorization.rs               # Authorization
-│   │       ├── reservation.rs                 # Reservation
-│   │       ├── profile.rs                     # ChargingProfile
-│   │       ├── capability.rs                  # Capabilities
-│   │       ├── error.rs                       # ChargingError (ChargeX)
-│   │       ├── firmware.rs                    # Firmware
-│   │       ├── energy.rs                      # EnergyConstraint
-│   │       └── state_machine/                 # State machines
-│   │           ├── mod.rs
-│   │           ├── session.rs                 # SessionStateMachine
-│   │           ├── station.rs                 # StationStateMachine
-│   │           └── connector.rs               # ConnectorStateMachine
-│   │
 │   ├── chargemesh-ocpp/                       # OCPP Implementation
-│   │   ├── Cargo.toml
-│   │   └── src/
-│   │       ├── lib.rs
-│   │       ├── common/
-│   │       │   ├── mod.rs
-│   │       │   ├── messages.rs
-│   │       │   ├── types.rs
-│   │       │   ├── errors.rs
-│   │       │   └── websocket.rs
-│   │       ├── v16/                           # OCPP 1.6
-│   │       │   ├── mod.rs
-│   │       │   ├── messages.rs                # All 13 messages
-│   │       │   ├── types.rs
-│   │       │   ├── parser.rs
-│   │       │   ├── client.rs
-│   │       │   ├── server.rs
-│   │       │   └── state_machine.rs
-│   │       ├── v201/                          # OCPP 2.0.1
-│   │       │   ├── mod.rs
-│   │       │   └── types.rs
-│   │       └── v21/                           # OCPP 2.1
-│   │           ├── mod.rs
-│   │           └── types.rs
-│   │
-│   ├── chargemesh-capability/                 # ⭐ Capability Engine
-│   │   ├── Cargo.toml
-│   │   └── src/
-│   │       ├── lib.rs
-│   │       ├── engine/
-│   │       │   ├── mod.rs
-│   │       │   ├── capability.rs              # CapabilityDefinition, CapabilityState
-│   │       │   ├── resolver.rs                # Multi-factor resolution
-│   │       │   ├── registry.rs                # Capability registry
-│   │       │   └── evaluator.rs               # Rule-based evaluation
-│   │       ├── detectors/
-│   │       │   ├── mod.rs
-│   │       │   ├── protocol_detector.rs       # Protocol-based detection
-│   │       │   ├── vendor_detector.rs         # Vendor-based detection
-│   │       │   ├── firmware_detector.rs       # Firmware-based detection
-│   │       │   └── runtime_detector.rs        # Runtime-based detection
-│   │       ├── profiles/
-│   │       │   ├── mod.rs
-│   │       │   └── model_profiles.rs          # ABB, Siemens profiles
-│   │       └── rules/
-│   │           ├── mod.rs
-│   │           ├── engine.rs                  # Rule engine
-│   │           ├── conditions.rs              # Rule conditions
-│   │           └── actions.rs                 # Rule actions
-│   │
-│   └── chargemesh-wasm/                       # WASM module for web
+│   ├── chargemesh-capability/                 # Capability Engine
+│   └── chargemesh-simulator/                  # Simulator
 │       ├── Cargo.toml
 │       └── src/
-│           └── lib.rs                         # Exports for Emerge
-│
+│           ├── lib.rs
+│           ├── core/                          # Core simulator components
+│           │   ├── simulator.rs               # Main coordinator
+│           │   ├── scenario.rs                # Scenarios
+│           │   └── event.rs                   # Events
+│           ├── ev/                            # EV Simulator
+│           │   ├── ev_simulator.rs
+│           │   ├── battery.rs
+│           │   └── iso15118.rs
+│           ├── evse/                          # EVSE Simulator
+│           │   ├── evse_simulator.rs
+│           │   └── station.rs
+│           ├── csms/                          # CSMS Simulator
+│           │   └── csms_simulator.rs
+│           ├── ocpi/                          # OCPI Simulator
+│           │   └── ocpi_simulator.rs
+│           ├── grid/                          # Grid Simulator
+│           │   └── grid_simulator.rs
+│           └── faults/                        # Fault Injection
+│               ├── fault_injector.rs
+│               └── scenarios.rs
 ├── apps/
 │   └── chargemesh-cli/                        # Command-line interface
 │       ├── Cargo.toml
 │       └── src/
-│           └── main.rs                        # Parse, Capture, Capability, Version
-│
+│           └── main.rs                        # Parse, Capture, Capability, Simulate
 ├── web/
-│   └── inspector/                             # Web Inspector (Emerge Core)
-│       ├── package.json
-│       ├── tsconfig.json
-│       ├── index.html
-│       ├── src/
-│       │   ├── main.ts                        # Application entry
-│       │   ├── components/
-│       │   │   ├── ocpp-inspector.ts          # Custom Element
-│       │   │   └── state-machine.ts           # State visualization
-│       │   └── wasm/                          # WASM bindings
-│       │       └── index.ts
-│       └── styles/
-│           └── main.css
-│
+│   └── inspector/                             # Web Inspector (Phase 7+)
 ├── tests/
 │   ├── unit/
-│   │   └── core_tests.rs
 │   ├── integration/
 │   │   ├── ir_tests.rs
 │   │   ├── ocpp_tests.rs
-│   │   └── capability_tests.rs                # ⭐ Capability tests
+│   │   ├── capability_tests.rs
+│   │   └── simulator_tests.rs
 │   └── e2e/
 │       ├── ocpp_e2e_tests.rs
-│       └── capability_e2e_tests.rs            # ⭐ Capability E2E tests
-│
+│       ├── capability_e2e_tests.rs
+│       └── simulator_e2e_tests.rs
 └── examples/
     ├── basic_connect.rs
     ├── diagnose_trace.rs
-    └── capability_analysis.rs                  # ⭐ Capability example
+    ├── capability_analysis.rs
+    └── run_simulation.rs
 ```
 
 ---
@@ -855,6 +575,7 @@ cargo test --workspace
 cargo test -p chargemesh-ir
 cargo test -p chargemesh-ocpp
 cargo test -p chargemesh-capability
+cargo test -p chargemesh-simulator
 
 # View project structure
 tree -L 3
@@ -878,6 +599,12 @@ chargemesh capture --url ws://charger:9000 --output captured.ocpp --duration 60
 # Analyze capabilities
 chargemesh capability --config station.json --format human --verbose
 
+# Run a simulation
+chargemesh simulate --target charger --scenario normal --duration 30
+
+# List scenarios
+chargemesh simulate --list-scenarios
+
 # Show version
 chargemesh version
 ```
@@ -892,7 +619,7 @@ Applications should depend on the ChargeMesh model rather than individual chargi
 
 ### Capability-First Design
 
-The system should describe what a device can actually do, rather than assuming capabilities from its protocol version. This is the core of Phase 3.
+The system should describe what a device can actually do, rather than assuming capabilities from its protocol version.
 
 ### Explicit State Machines
 
@@ -973,7 +700,7 @@ ChargeMesh aims to become a common software infrastructure layer for EV charging
 | **P1** | Universal EV Model (EV-IR) | ✅ Complete |
 | **P2** | OCPP 1.6 Core | ✅ Complete |
 | **P3** | Capability Engine | ✅ Complete |
-| P4 | Simulator | 📋 Planned |
+| **P4** | Simulator | ✅ Complete |
 | P5 | Diagnostics Engine | 📋 Planned |
 | P6 | Observability Platform | 📋 Planned |
 | P7 | Web Inspector (Emerge Core + WASM) | 📋 Planned |
@@ -1075,8 +802,20 @@ ChargeMesh builds upon the work of many standards bodies and open-source project
 - ✅ CLI command `capability`
 - ✅ Unit, integration, and E2E tests
 
+### Phase 4 (Complete)
+- ✅ `chargemesh-simulator` — Full simulation environment
+- ✅ EV Simulator (battery, ISO 15118)
+- ✅ EVSE Simulator (station, connectors)
+- ✅ CSMS Simulator
+- ✅ OCPI Simulator
+- ✅ Grid Simulator
+- ✅ Fault injector (all fault types)
+- ✅ Scenario system (6 pre-defined scenarios)
+- ✅ CLI command `simulate`
+- ✅ Unit, integration, and E2E tests
+
 ### Next Steps
-- Phase 4: Simulator
 - Phase 5: Diagnostics Engine
 - Phase 6: Observability Platform
 - Phase 7: Web Inspector with Emerge Core + WASM
+```

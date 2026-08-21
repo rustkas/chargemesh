@@ -37,17 +37,47 @@ pub enum Commands {
 
     /// Analyze capabilities of a charging station
     Capability {
-        /// Station configuration file (JSON/YAML)
         #[arg(short, long)]
         config: PathBuf,
-
-        /// Output format (human, json)
         #[arg(short, long, default_value = "human")]
         format: OutputFormat,
+        #[arg(short, long)]
+        verbose: bool,
+    },
+
+    /// Run a simulation
+    Simulate {
+        /// Simulation target (charger, ev, grid)
+        #[arg(short, long)]
+        target: String,
+
+        /// Protocol to use
+        #[arg(short, long)]
+        protocol: Option<String>,
+
+        /// Model of the device
+        #[arg(short, long)]
+        model: Option<String>,
+
+        /// Firmware version
+        #[arg(short, long)]
+        firmware: Option<String>,
+
+        /// Scenario to run (normal, network-failure, auth-failure, etc.)
+        #[arg(short, long)]
+        scenario: Option<String>,
+
+        /// Duration in seconds
+        #[arg(short, long)]
+        duration: Option<u64>,
 
         /// Verbose output
         #[arg(short, long)]
         verbose: bool,
+
+        /// List available scenarios
+        #[arg(long)]
+        list_scenarios: bool,
     },
 
     /// Show version information
@@ -78,6 +108,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Capability { config, format, verbose } => {
             analyze_capabilities(config, format, verbose).await?;
         }
+        Commands::Simulate {
+            target,
+            protocol,
+            model,
+            firmware,
+            scenario,
+            duration,
+            verbose,
+            list_scenarios,
+        } => {
+            run_simulation(target, protocol, model, firmware, scenario, duration, verbose, list_scenarios).await?;
+        }
         Commands::Version => {
             println!("ChargeMesh v{}", env!("CARGO_PKG_VERSION"));
         }
@@ -86,82 +128,81 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-async fn analyze_capabilities(
-    path: PathBuf,
-    format: OutputFormat,
+async fn run_simulation(
+    target: String,
+    protocol: Option<String>,
+    model: Option<String>,
+    firmware: Option<String>,
+    scenario: Option<String>,
+    duration: Option<u64>,
     verbose: bool,
+    list_scenarios: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    println!("{}", format!("🔍 Analyzing capabilities from: {}", path.display()).cyan());
-
-    let content = std::fs::read_to_string(&path)?;
-    let context: chargemesh_capability::CapabilityContext = serde_json::from_str(&content)?;
-
-    if verbose {
-        println!("{}", "📋 Context:".cyan());
-        println!("  Station: {}", context.station_id);
-        println!("  Vendor: {}", context.vendor.name);
-        println!("  Model: {}", context.model);
-        println!("  Protocol: {:?} v{}", context.protocol.name, context.protocol.version);
-        println!("  Firmware: {}", context.firmware.version);
-        println!("  Online: {}", context.runtime.is_online);
+    if list_scenarios {
+        println!("{}", "📋 Available Scenarios:".cyan());
+        println!("  • normal          - Normal charging session");
+        println!("  • network-failure - Network disconnection during charging");
+        println!("  • auth-failure    - Authorization failure");
+        println!("  • plug-and-charge - ISO 15118 Plug & Charge");
+        println!("  • v2g             - Vehicle-to-Grid bidirectional");
+        println!("  • certificate-failure - Certificate validation failure");
+        return Ok(());
     }
 
-    let engine = chargemesh_capability::CapabilityEngine::new();
-    let capabilities = engine.determine_capabilities(&context).await?;
+    println!("{}", format!("🎮 Running simulation: {}", target).cyan());
 
-    match format {
-        OutputFormat::Human => {
-            println!("\n{}", "═══════════════════════════════════════════════════════════".bold().yellow());
-            println!("{}", "  🔧 CAPABILITY REPORT".bold().white());
-            println!("{}", "═══════════════════════════════════════════════════════════".bold().yellow());
+    let config = chargemesh_simulator::SimulatorConfig {
+        mode: chargemesh_simulator::SimulationMode::Normal,
+        speed: 1.0,
+        seed: None,
+        max_duration: duration.map(chrono::Duration::seconds),
+        verbose,
+        protocol: protocol.unwrap_or_else(|| "ocpp-1.6".to_string()),
+        station_config: chargemesh_simulator::StationSimConfig {
+            vendor: model.clone().unwrap_or_else(|| "ABB".to_string()),
+            model: model.clone().unwrap_or_else(|| "Terra 54".to_string()),
+            firmware_version: firmware.clone().unwrap_or_else(|| "1.2.3".to_string()),
+            connector_count: 2,
+            max_power: 50000,
+            has_iso15118: true,
+            has_v2g: false,
+        },
+        ev_config: chargemesh_simulator::EvSimConfig {
+            battery_capacity: 75000,
+            initial_soc: 20,
+            target_soc: 80,
+            supports_plug_and_charge: true,
+            supports_v2g: false,
+            max_power: 22000,
+        },
+        grid_config: chargemesh_simulator::GridSimConfig {
+            available_capacity: 100000,
+            max_power: 100000,
+            grid_load_percentage: 50,
+            has_solar: true,
+            has_battery_storage: false,
+        },
+    };
 
-            // Group capabilities by category
-            println!("\n{}", "📊 CAPABILITIES".bold().cyan());
+    println!("  Protocol: {}", config.protocol);
+    println!("  Station: {} {}", config.station_config.vendor, config.station_config.model);
+    println!("  Scenario: {}", scenario.as_deref().unwrap_or("normal"));
 
-            let mut sorted: Vec<_> = capabilities.capabilities.iter().collect();
-            sorted.sort_by_key(|(k, _)| format!("{:?}", k));
+    // Run the scenario
+    let scenario_runner = chargemesh_simulator::core::ScenarioRunner::new();
+    let scenario = match scenario.as_deref() {
+        Some("normal") => chargemesh_simulator::core::Scenarios::normal_session(),
+        Some("network-failure") => chargemesh_simulator::core::Scenarios::network_failure(),
+        Some("auth-failure") => chargemesh_simulator::core::Scenarios::auth_failure(),
+        Some("plug-and-charge") => chargemesh_simulator::core::Scenarios::plug_and_charge(),
+        Some("v2g") => chargemesh_simulator::core::Scenarios::v2g(),
+        Some("certificate-failure") => chargemesh_simulator::core::Scenarios::certificate_failure(),
+        _ => chargemesh_simulator::core::Scenarios::normal_session(),
+    };
 
-            for (cap, state) in sorted {
-                let status = match state {
-                    CapabilityState::Supported { .. } => "✅ Supported".green(),
-                    CapabilityState::Limited { reason, .. } => {
-                        format!("⚠️ Limited: {}", reason).yellow()
-                    }
-                    CapabilityState::NotSupported { reason } => {
-                        if let Some(r) = reason {
-                            format!("❌ Not supported: {}", r).red()
-                        } else {
-                            "❌ Not supported".red()
-                        }
-                    }
-                    CapabilityState::NotAvailable { reason } => {
-                        format!("🚫 Unavailable: {}", reason).red()
-                    }
-                    CapabilityState::Unknown => "❓ Unknown".dimmed(),
-                };
+    println!("{}", "🔄 Running scenario...".yellow());
+    scenario_runner.run(&scenario).await?;
 
-                let name = format!("{:?}", cap).replace("_", " ");
-                println!("  • {:<30} {}", name, status);
-            }
-
-            println!("\n{}", "💡 SUMMARY".bold().cyan());
-            let supported = capabilities.capabilities.values()
-                .filter(|s| s.is_supported())
-                .count();
-            let limited = capabilities.capabilities.values()
-                .filter(|s| s.is_limited())
-                .count();
-            println!("  Total: {}", capabilities.capabilities.len());
-            println!("  Supported: {}", supported.green());
-            println!("  Limited: {}", limited.yellow());
-
-            println!("\n{}", "═══════════════════════════════════════════════════════════".bold().yellow());
-        }
-        OutputFormat::Json => {
-            let output = capabilities.to_json();
-            println!("{}", serde_json::to_string_pretty(&output).unwrap());
-        }
-    }
-
+    println!("{}", "✅ Simulation completed successfully".green());
     Ok(())
 }
