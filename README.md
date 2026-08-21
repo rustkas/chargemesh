@@ -1,6 +1,3 @@
-# Обновлённый `README.md` (Phase 8)
-
-```markdown
 # ChargeMesh
 
 **Universal interoperability runtime for EV charging infrastructure.**
@@ -78,15 +75,15 @@ Vendor APIs ──┘
 ```text
 ┌─────────────────────────────────────────────────────────┐
 │                    ChargingNetwork                      │
-│  + id: string                                          │
-│  + name: string                                        │
-│  + stations: ChargingStation[]                         │
-│  + capabilities: Capabilities                          │
+│  + id: string                                           │
+│  + name: string                                         │
+│  + stations: ChargingStation[]                          │
+│  + capabilities: Capabilities                           │
 └───────────────────┬─────────────────────────────────────┘
                     │
                     ▼
-┌─────────────────────────────────────────────────────────┐
-│                    ChargingStation                      │
+┌────────────────────────────────────────────────────────┐
+│                    ChargingStation                     │
 │  + id: StationId                                       │
 │  + vendor: string                                      │
 │  + model: string                                       │
@@ -94,30 +91,30 @@ Vendor APIs ──┘
 │  + evses: EVSE[]                                       │
 │  + capabilities: Capabilities                          │
 │  + state: StationState                                 │
-└───────────────────┬─────────────────────────────────────┘
+└───────────────────┬────────────────────────────────────┘
                     │
                     ▼
-┌─────────────────────────────────────────────────────────┐
-│                    EVSE                                 │
+┌────────────────────────────────────────────────────────┐
+│                    EVSE                                │
 │  + id: EvseId                                          │
-│  + connectors: Connector[]                              │
+│  + connectors: Connector[]                             │
 │  + maxPower: Power                                     │
 │  + state: EVSEState                                    │
-└───────────────────┬─────────────────────────────────────┘
+└───────────────────┬────────────────────────────────────┘
                     │
                     ▼
-┌─────────────────────────────────────────────────────────┐
-│                  Connector                              │
+┌────────────────────────────────────────────────────────┐
+│                  Connector                             │
 │  + id: ConnectorId                                     │
 │  + type: ConnectorType                                 │
 │  + state: ConnectorState                               │
 │  + currentSession?: ChargingSession                    │
 │  + maxPower: Power                                     │
-└───────────────────┬─────────────────────────────────────┘
+└───────────────────┬────────────────────────────────────┘
                     │
                     ▼
-┌─────────────────────────────────────────────────────────┐
-│                   ChargingSession                       │
+┌────────────────────────────────────────────────────────┐
+│                   ChargingSession                      │
 │  + id: SessionId                                       │
 │  + stationId: StationId                                │
 │  + evseId: EvseId                                      │
@@ -126,7 +123,7 @@ Vendor APIs ──┘
 │  + startTime: Timestamp                                │
 │  + endTime?: Timestamp                                 │
 │  + energyConsumed: Energy                              │
-└─────────────────────────────────────────────────────────┘
+└────────────────────────────────────────────────────────┘
 ```
 
 ### Supported Entities
@@ -229,6 +226,11 @@ ChargeMesh uses **Rust** as its primary language for the core platform, with **E
 │                               │  Fault injection │ Scenarios               │
 │                               │  Normal │ Network Failure │ V2G            │
 ├────────────────────────────────────────────────────────────────────────────┤
+│  WEB INSPECTOR (WASM)         │  Emerge Core (signals, computed, effects)  │
+│                               │  WASM for protocol analysis                │
+│                               │  Timeline │ State Machine │ Capabilities   │
+│                               │  Diagnostics │ Live capture                │
+├────────────────────────────────────────────────────────────────────────────┤
 │  DATA LAYER                   │  PostgreSQL │ Redis │ NATS/Kafka           │
 ├────────────────────────────────────────────────────────────────────────────┤
 │  INFRASTRUCTURE               │  Docker │ Kubernetes │ Terraform           │
@@ -236,11 +238,11 @@ ChargeMesh uses **Rust** as its primary language for the core platform, with **E
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Web Frontend (Emerge Core)
+### Web Frontend (Emerge Core + WASM)
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────┐
-│  FRONTEND (Emerge Core)       │  @emerge/core (signals, computed, effects) │
+│  FRONTEND (Emerge Core + WASM)│  @emerge/core (signals, computed, effects) │
 │                               │  • signal() — reactive state               │
 │                               │  • computed() — lazy derived values        │
 │                               │  • effect() — scheduled side effects       │
@@ -248,15 +250,20 @@ ChargeMesh uses **Rust** as its primary language for the core platform, with **E
 │                               │  • Custom Elements for UI components       │
 │                               │  • WASM for protocol analysis              │
 │                               │  • No Virtual DOM — direct DOM updates     │
+│                               │  • Real-time OCPP parsing in browser       │
+│                               │  • Timeline visualization                  │
+│                               │  • State machine diagram                   │
+│                               │  • Capability analysis                     │
+│                               │  • Diagnostic reporting                    │
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Why Rust + Emerge Core?
+### Why Rust + Emerge Core + WASM?
 
 | Aspect | Benefit |
 |--------|---------|
-| **Protocol Analysis** | OCPP parsing and capability detection run natively in browser via WASM |
-| **Performance** | Near-native speed for protocol processing and capability evaluation |
+| **Protocol Analysis** | OCPP parsing runs natively in browser via WASM |
+| **Performance** | Near-native speed for protocol processing |
 | **Type Safety** | Full type safety across network boundaries |
 | **Code Reuse** | Same Rust code for backend and frontend |
 | **No JavaScript** | No runtime overhead for protocol logic |
@@ -265,7 +272,7 @@ ChargeMesh uses **Rust** as its primary language for the core platform, with **E
 | **Observability** | Full metrics, logs, events, and correlations |
 | **Integration** | OCPI roaming, Energy Management, V2G, Smart Charging |
 | **Cloud Platform** | Multi-tenant, billing, analytics |
-| **Simulator** | Full ecosystem simulation without physical hardware |
+| **Web Inspector** | Protocol debugging in the browser |
 
 ---
 
@@ -283,6 +290,7 @@ ChargeMesh follows an open-core business model:
 │  • Observability Platform (local)                                          │
 │  • Integration Layer (OCPI, Energy, V2G, Smart Charging)                   │
 │  • Simulator (EV, EVSE, CSMS, OCPI, Grid)                                  │
+│  • Web Inspector (Emerge Core + WASM)                                      │
 │  • SDK (Rust)                                                              │
 │  • CLI with 10 commands                                                    │
 │  • Community support                                                       │
@@ -320,7 +328,7 @@ ChargeMesh follows an open-core business model:
 
 ## Project Status
 
-> **Early development — Phase 8 Complete**
+> **Development — Phase 9 Complete**
 
 ChargeMesh is currently in active research and development. The APIs, EV-IR model, protocol adapters, and architecture are expected to evolve significantly.
 
@@ -339,13 +347,15 @@ ChargeMesh is currently in active research and development. The APIs, EV-IR mode
 | **P6** | **Observability Platform** | ✅ **Complete** |
 | **P7** | **OCPI + Energy Integration** | ✅ **Complete** |
 | **P8** | **Cloud Platform** | ✅ **Complete** |
-| P8 | REST API (10 endpoints) | ✅ Complete |
-| P8 | Tenant Management | ✅ Complete |
-| P8 | Billing & Subscriptions | ✅ Complete |
-| P8 | Analytics Engine | ✅ Complete |
-| P8 | JWT Authentication | ✅ Complete |
-| P8 | CLI command `cloud` | ✅ Complete |
-| P9 | Web Inspector (Emerge Core + WASM) | 📋 Planned |
+| **P9** | **Web Inspector** | ✅ **Complete** |
+| P9 | WASM bindings | ✅ Complete |
+| P9 | Emerge Core integration | ✅ Complete |
+| P9 | Timeline visualization | ✅ Complete |
+| P9 | State Machine visualization | ✅ Complete |
+| P9 | Capability analysis | ✅ Complete |
+| P9 | Diagnostic reporting | ✅ Complete |
+| P9 | Live capture (WebSocket) | ✅ Complete |
+| P9 | File upload (drag & drop) | ✅ Complete |
 
 ---
 
@@ -361,8 +371,16 @@ cd chargemesh
 # Build all crates
 cargo build --workspace
 
+# Build WASM module
+wasm-pack build --target web crates/chargemesh-wasm
+
 # Install the CLI
 cargo install --path apps/chargemesh-cli
+
+# Build Web Inspector
+cd web/inspector
+npm install
+npm run build
 ```
 
 ### Quick Start
@@ -402,48 +420,29 @@ chargemesh energy --config ems.json optimize
 chargemesh cloud login --url https://api.chargemesh.cloud --token <your-token>
 chargemesh cloud status
 
-# Cloud: List stations and sessions
-chargemesh cloud stations
-chargemesh cloud sessions
-
-# Cloud: Get analytics
-chargemesh cloud analytics
-
-# Cloud: Subscription info
-chargemesh cloud subscription
-
-# List available scenarios
-chargemesh simulate --list-scenarios
-
-# Show version
-chargemesh version
+# Start Web Inspector
+cd web/inspector
+npm run serve
 ```
 
 ---
 
 ## Examples
 
-### 1. Parse OCPP Trace
+### 1. Web Inspector — Load Trace
 
-```bash
-chargemesh parse --file trace.ocpp --verbose
-```
+Open `http://localhost:3000` in your browser, upload an OCPP trace file, and get:
 
-```text
-📂 Parsing file: trace.ocpp
-📊 Parsed 42 messages
+- 📊 **Timeline** — Chronological list of all OCPP messages with direction and status
+- 🔄 **State Machine** — Visual state machine showing current session state
+- 🔧 **Capabilities** — List of supported features detected from the trace
+- 🔍 **Diagnostics** — Root cause analysis with confidence scoring
 
-📝 Message Timeline
-  12:01:03 ⬅️  Call(BootNotification)
-  12:01:05 ➡️  CallResult(1)
-  12:03:21 ⬅️  Call(Authorize)
-  12:03:22 ➡️  CallResult(3)
-  12:03:25 ⬅️  Call(StartTransaction)
-  12:03:25 ➡️  CallResult(4)
-  12:03:26 ⬅️  Call(StatusNotification)
-```
+### 2. Web Inspector — Live Capture
 
-### 2. OCPI Roaming — Get Locations
+Connect to a live charger via WebSocket and see messages appear in real-time.
+
+### 3. OCPI Roaming — Get Locations
 
 ```bash
 chargemesh ocpi --url https://cpo.example.com/ocpi --token abc123 --country DE --party CPO locations
@@ -478,24 +477,12 @@ chargemesh ocpi --url https://cpo.example.com/ocpi --token abc123 --country DE -
 }
 ```
 
-### 3. Cloud Platform — Login and List Stations
+### 4. Cloud Platform — Login and List Stations
 
 ```bash
 # Login
 chargemesh cloud login --url https://api.chargemesh.cloud --token eyJhbGciOiJIUzI1NiIs...
 
-# Check status
-chargemesh cloud status
-```
-
-```text
-🔭 ChargeMesh Cloud Status
-  ✅ Cloud is online
-  Version: 0.1.0
-  Environment: production
-```
-
-```bash
 # List stations
 chargemesh cloud stations
 ```
@@ -508,24 +495,6 @@ chargemesh cloud stations
     • CP-003 (VersiCharge) - online
 ```
 
-### 4. Smart Charging Optimization
-
-```bash
-chargemesh energy --config ems.json optimize
-```
-
-```text
-⚡ Running smart charging optimization...
-
-  Session: SESS-001
-    Schedule:
-      12:00 - 13:30 | 11.0 kW | 16.5 kWh
-    Total Energy: 16.5 kWh
-    Total Cost: €2.48
-    Carbon Emissions: 6.6 kg CO2
-    Target: MinimizeCost
-```
-
 ---
 
 ## Repository Structure
@@ -536,12 +505,6 @@ chargemesh/
 ├── README.md                                  # This file
 ├── LICENSE                                    # License
 ├── docs/                                      # Documentation
-│   ├── architecture.md                        # Architecture overview
-│   ├── ev-ir.md                               # EV-IR specification
-│   ├── protocol-model.md                      # Protocol model
-│   ├── capabilities.md                        # Capabilities model
-│   ├── state-machines.md                      # State machines
-│   └── error-taxonomy.md                      # Error taxonomy (ChargeX MREC)
 ├── crates/
 │   ├── chargemesh-core/                       # Core types & utilities
 │   ├── chargemesh-ir/                         # EV-IR model
@@ -551,31 +514,29 @@ chargemesh/
 │   ├── chargemesh-diagnostics/                # Diagnostics Engine
 │   ├── chargemesh-observability/              # Observability Platform
 │   ├── chargemesh-integration/                # OCPI + Energy Integration
-│   └── chargemesh-cloud/                      # ⭐ Cloud Platform
+│   ├── chargemesh-cloud/                      # Cloud Platform
+│   └── chargemesh-wasm/                       # ⭐ WASM Module
 │       ├── Cargo.toml
 │       └── src/
-│           ├── lib.rs
-│           ├── core/                          # Core platform
-│           │   └── platform.rs                # Main platform
-│           ├── api/                           # REST API
-│           │   ├── mod.rs
-│           │   └── rest.rs                    # API endpoints
-│           ├── billing/                       # Billing
-│           │   ├── mod.rs
-│           │   └── subscription.rs            # Subscriptions
-│           ├── tenant/                        # Multi-tenant
-│           │   ├── mod.rs
-│           │   └── manager.rs                 # Tenant management
-│           └── analytics/                     # Analytics
-│               ├── mod.rs
-│               └── aggregator.rs              # Data aggregation
+│           └── lib.rs                         # WASM exports
 ├── apps/
 │   └── chargemesh-cli/                        # Command-line interface
 │       ├── Cargo.toml
 │       └── src/
 │           └── main.rs                        # 10 commands
 ├── web/
-│   └── inspector/                             # Web Inspector (Phase 9+)
+│   └── inspector/                             # ⭐ Web Inspector
+│       ├── package.json
+│       ├── tsconfig.json
+│       ├── index.html
+│       ├── styles.css
+│       └── src/
+│           ├── main.ts                        # Emerge Core + WASM
+│           └── components/
+│               ├── ocpp-inspector.ts
+│               ├── state-machine.ts
+│               ├── timeline.ts
+│               └── capabilities.ts
 ├── tests/
 │   ├── unit/
 │   ├── integration/
@@ -586,7 +547,8 @@ chargemesh/
 │   │   ├── diagnostics_tests.rs
 │   │   ├── observability_tests.rs
 │   │   ├── integration_tests.rs
-│   │   └── cloud_tests.rs                     # ⭐ Cloud tests
+│   │   ├── cloud_tests.rs
+│   │   └── wasm_tests.rs                      # ⭐ WASM tests
 │   └── e2e/
 │       ├── ocpp_e2e_tests.rs
 │       ├── capability_e2e_tests.rs
@@ -594,7 +556,8 @@ chargemesh/
 │       ├── diagnostics_e2e_tests.rs
 │       ├── observability_e2e_tests.rs
 │       ├── integration_e2e_tests.rs
-│       └── cloud_e2e_tests.rs                 # ⭐ Cloud E2E tests
+│       ├── cloud_e2e_tests.rs
+│       └── web_inspector_e2e_tests.rs         # ⭐ Web Inspector tests
 └── examples/
     ├── basic_connect.rs
     ├── diagnose_trace.rs
@@ -614,8 +577,8 @@ chargemesh/
 - Git
 - PostgreSQL 15+ (for cloud platform)
 - Redis 7+ (for caching)
-- Node.js 18+ (for web inspector, Phase 9+)
-- wasm-pack (for WASM compilation, Phase 9+)
+- Node.js 18+ (for web inspector)
+- wasm-pack (for WASM compilation)
 
 ### Build
 
@@ -630,6 +593,14 @@ cargo build --workspace
 # Build in release mode
 cargo build --release --workspace
 
+# Build WASM module
+wasm-pack build --target web crates/chargemesh-wasm
+
+# Build Web Inspector
+cd web/inspector
+npm install
+npm run build
+
 # Run tests
 cargo test --workspace
 
@@ -642,12 +613,34 @@ cargo test -p chargemesh-diagnostics
 cargo test -p chargemesh-observability
 cargo test -p chargemesh-integration
 cargo test -p chargemesh-cloud
+cargo test -p chargemesh-wasm
 
 # View project structure
 tree -L 3
 
 # Build documentation
 cargo doc --workspace --open
+```
+
+### Web Inspector Development
+
+```bash
+cd web/inspector
+
+# Install dependencies
+npm install
+
+# Build WASM (from project root)
+wasm-pack build --target web crates/chargemesh-wasm
+
+# Copy WASM to web inspector
+cp ../../target/wasm32-unknown-unknown/release/chargemesh_wasm.wasm dist/
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
 ```
 
 ### CLI Usage
@@ -677,9 +670,6 @@ chargemesh observe --station-id CP-001 --follow
 # OCPI: List locations
 chargemesh ocpi --url https://cpo.example.com/ocpi --token abc123 --country DE --party CPO locations
 
-# OCPI: List sessions
-chargemesh ocpi --url https://cpo.example.com/ocpi --token abc123 --country DE --party CPO sessions
-
 # Energy: Check EMS status
 chargemesh energy --config ems.json status
 
@@ -694,9 +684,6 @@ chargemesh cloud stations
 
 # Cloud: Get analytics
 chargemesh cloud analytics
-
-# Cloud: Subscription info
-chargemesh cloud subscription
 
 # List scenarios
 chargemesh simulate --list-scenarios
@@ -801,7 +788,7 @@ ChargeMesh aims to become a common software infrastructure layer for EV charging
 | **P6** | Observability Platform | ✅ Complete |
 | **P7** | OCPI + Energy Integration | ✅ Complete |
 | **P8** | Cloud Platform | ✅ Complete |
-| P9 | Web Inspector (Emerge Core + WASM) | 📋 Planned |
+| **P9** | Web Inspector | ✅ Complete |
 
 ---
 
@@ -827,7 +814,7 @@ Please open an issue before implementing a major architectural change.
 - Simulator scenarios
 - Diagnostics rules and patterns
 - Documentation
-- Web Inspector (Emerge Core + WASM)
+- Web Inspector improvements
 - Testing
 
 ---
@@ -849,6 +836,7 @@ ChargeMesh builds upon the work of many standards bodies and open-source project
 - [Tokio](https://tokio.rs/) — Async runtime
 - [Serde](https://serde.rs/) — Serialization
 - [Emerge Core](https://github.com/rustkas/emerge-core) — Reactive foundation
+- [wasm-bindgen](https://rustwasm.github.io/wasm-bindgen/) — WASM bindings
 
 ---
 
@@ -876,43 +864,26 @@ ChargeMesh builds upon the work of many standards bodies and open-source project
 
 ## Summary
 
-### Phase 1 (Complete)
-- ✅ `chargemesh-core` — Core types, identifiers, error handling
-- ✅ `chargemesh-ir` — 16 EV-IR entities, state machines
+### Phase 1-8 (Complete)
+- ✅ Full core platform with EV-IR, OCPP, Capability Engine, Simulator, Diagnostics, Observability, OCPI + Energy Integration, and Cloud Platform
 
-### Phase 2 (Complete)
-- ✅ `chargemesh-ocpp` — OCPP 1.6 implementation
-- ✅ 13 OCPP 1.6 messages, WebSocket, parser, state machine
+### Phase 9 (Complete)
+- ✅ `chargemesh-wasm` — WASM bindings for OCPP parsing, timeline analysis, diagnostics, and capability detection
+- ✅ `web/inspector` — Web Inspector with Emerge Core
+- ✅ Timeline visualization with message filtering
+- ✅ State machine visualization
+- ✅ Capability analysis display
+- ✅ Diagnostic reporting with root cause analysis
+- ✅ Live capture via WebSocket
+- ✅ File upload with drag & drop
+- ✅ Production-ready build system
 
-### Phase 3 (Complete)
-- ✅ `chargemesh-capability` — Capability Engine
-- ✅ Multi-factor detection, rule engine, vendor profiles
-
-### Phase 4 (Complete)
-- ✅ `chargemesh-simulator` — Full simulation environment
-- ✅ EV, EVSE, CSMS, OCPI, Grid simulators, fault injection, scenarios
-
-### Phase 5 (Complete)
-- ✅ `chargemesh-diagnostics` — Diagnostics Engine
-- ✅ Timeline Collector, 4 analyzers, Root Cause Analysis, Report Generator
-
-### Phase 6 (Complete)
-- ✅ `chargemesh-observability` — Observability Platform
-- ✅ Metrics, Structured Logging, Event Bus, Correlation Tracing, Dashboard
-
-### Phase 7 (Complete)
-- ✅ `chargemesh-integration` — OCPI + Energy Integration
-- ✅ OCPI Client/Server, EMS, V2G, Smart Charging Optimizer
-
-### Phase 8 (Complete)
-- ✅ `chargemesh-cloud` — Cloud Platform
-- ✅ REST API (10 endpoints)
-- ✅ Tenant Management
-- ✅ Billing & Subscriptions
-- ✅ Analytics Engine
-- ✅ JWT Authentication
-- ✅ CLI command `cloud` (6 subcommands)
-
-### Next Steps
-- Phase 9: Web Inspector with Emerge Core + WASM
-```
+### Project Complete! 🚀
+All 9 phases of ChargeMesh are now implemented. The project is a complete platform for EV charging interoperability with:
+- 10 CLI commands
+- 9 core crates
+- Web Inspector with WASM
+- Cloud platform with multi-tenancy
+- Full observability stack
+- OCPI + Energy integration
+- Simulator for testing without hardware

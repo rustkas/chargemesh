@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChargeMesh Web Inspector</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <div class="logo">
+                <span class="icon">⚡</span>
+                <h1>ChargeMesh Inspector</h1>
+                <span class="version" id="version">v0.1.0</span>
+            </div>
+            <nav>
+                <button id="btn-file" class="active">📂 Load Trace</button>
+                <button id="btn-live">🔌 Live Capture</button>
+                <button id="btn-analyze" disabled>🔍 Analyze</button>
+            </nav>
+        </header>
+
+        <main>
+            <!-- Sidebar: File upload -->
+            <aside id="sidebar">
+                <div class="panel" id="file-panel">
+                    <h3>📂 Load OCPP Trace</h3>
+                    <div class="drop-zone" id="drop-zone">
+                        <p>Drop OCPP trace file here</p>
+                        <p class="hint">or click to browse</p>
+                        <input type="file" id="file-input" accept=".ocpp,.json,.txt,.log">
+                    </div>
+                    <div class="file-info" id="file-info">
+                        <span id="file-name">No file loaded</span>
+                        <span id="file-messages">0 messages</span>
+                    </div>
+                </div>
+
+                <div class="panel" id="live-panel" style="display:none;">
+                    <h3>🔌 Live Capture</h3>
+                    <div class="live-controls">
+                        <input type="text" id="ws-url" placeholder="ws://charger:9000" value="ws://localhost:9000">
+                        <button id="btn-connect">Connect</button>
+                        <button id="btn-disconnect" disabled>Disconnect</button>
+                    </div>
+                    <div class="live-status" id="live-status">
+                        <span class="status-dot disconnected"></span>
+                        <span id="live-status-text">Disconnected</span>
+                    </div>
+                </div>
+
+                <div class="panel" id="analysis-panel">
+                    <h3>📊 Analysis</h3>
+                    <button id="btn-run-analysis" disabled>Run Analysis</button>
+                    <div class="analysis-stats" id="analysis-stats">
+                        <div class="stat-item">
+                            <span class="label">Messages</span>
+                            <span class="value" id="stat-messages">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">Errors</span>
+                            <span class="value" id="stat-errors">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">State</span>
+                            <span class="value" id="stat-state">—</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">Capabilities</span>
+                            <span class="value" id="stat-capabilities">0</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main content -->
+            <section id="content">
+                <div class="tabs">
+                    <button class="tab active" data-tab="timeline">⏱️ Timeline</button>
+                    <button class="tab" data-tab="state">🔄 State Machine</button>
+                    <button class="tab" data-tab="capabilities">🔧 Capabilities</button>
+                    <button class="tab" data-tab="diagnostics">🔍 Diagnostics</button>
+                </div>
+
+                <div class="tab-content" id="tab-timeline">
+                    <div id="timeline-container">
+                        <div class="empty-state">
+                            <p>📂 Load an OCPP trace or connect to a charger</p>
+                            <p class="hint">The timeline will appear here</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-state" style="display:none;">
+                    <div id="state-container">
+                        <div class="empty-state">
+                            <p>🔄 State machine visualization</p>
+                            <p class="hint">Will appear after analysis</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-capabilities" style="display:none;">
+                    <div id="capabilities-container">
+                        <div class="empty-state">
+                            <p>🔧 Capability analysis</p>
+                            <p class="hint">Will appear after analysis</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-diagnostics" style="display:none;">
+                    <div id="diagnostics-container">
+                        <div class="empty-state">
+                            <p>🔍 Diagnostic report</p>
+                            <p class="hint">Will appear after analysis</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>ChargeMesh Inspector — Built with <a href="https://github.com/rustkas/emerge-core" target="_blank">Emerge Core</a> · WASM v<span id="wasm-version">loading...</span></p>
+        </footer>
+    </div>
+
+    <script type="module" src="src/main.ts"></script>
+</body>
+</html>

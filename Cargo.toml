@@ -1,76 +1,28 @@
-[workspace]
-members = [
-    "crates/chargemesh-core",
-    "crates/chargemesh-ir",
-    "crates/chargemesh-ocpp",
-    "crates/chargemesh-capability",
-    "crates/chargemesh-simulator",
-    "crates/chargemesh-diagnostics",
-    "crates/chargemesh-observability",
-    "crates/chargemesh-integration",
-    "crates/chargemesh-cloud",
-    "apps/chargemesh-cli",
-]
+[package]
+name = "chargemesh-wasm"
+version = "0.1.0"
+edition = "2021"
+authors = ["ChargeMesh Team"]
+description = "WASM bindings for ChargeMesh"
+license = "Apache-2.0"
+repository = "https://github.com/rustkas/chargemesh"
 
-[workspace.dependencies]
-# Core
-chargemesh-core = { path = "crates/chargemesh-core" }
-chargemesh-ir = { path = "crates/chargemesh-ir" }
-chargemesh-ocpp = { path = "crates/chargemesh-ocpp" }
-chargemesh-capability = { path = "crates/chargemesh-capability" }
-chargemesh-simulator = { path = "crates/chargemesh-simulator" }
-chargemesh-diagnostics = { path = "crates/chargemesh-diagnostics" }
-chargemesh-observability = { path = "crates/chargemesh-observability" }
-chargemesh-integration = { path = "crates/chargemesh-integration" }
-chargemesh-cloud = { path = "crates/chargemesh-cloud" }
+[lib]
+crate-type = ["cdylib", "rlib"]
 
-# Apps
-chargemesh-cli = { path = "apps/chargemesh-cli" }
+[dependencies]
+chargemesh-core = { path = "../chargemesh-core" }
+chargemesh-ir = { path = "../chargemesh-ir" }
+chargemesh-ocpp = { path = "../chargemesh-ocpp" }
+chargemesh-capability = { path = "../chargemesh-capability" }
+chargemesh-diagnostics = { path = "../chargemesh-diagnostics" }
 
-# External dependencies
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-serde_yaml = "0.9"
-serde_repr = "0.1"
-tokio = { version = "1.0", features = ["full"] }
-tokio-tungstenite = "0.20"
-futures-util = "0.3"
-chrono = { version = "0.4", features = ["serde"] }
-uuid = { version = "1.0", features = ["v4", "serde"] }
-thiserror = "1.0"
-derive_more = { version = "0.99", features = ["display", "from"] }
-async-trait = "0.1"
-tracing = "0.1"
-tracing-subscriber = "0.3"
-clap = { version = "4.0", features = ["derive"] }
-colored = "2.0"
-regex = "1.0"
-lazy_static = "1.4"
-rand = "0.8"
-rand_distr = "0.4"
-ndarray = "0.15"
-statrs = "0.16"
-petgraph = "0.6"
-handlebars = "4.0"
-serde_html = "0.2"
-prometheus = "0.13"
-ratatui = "0.23"
-crossterm = "0.27"
-reqwest = { version = "0.11", features = ["json"] }
-axum = { version = "0.6", features = ["ws"] }
-tower = "0.4"
-tower-http = { version = "0.4", features = ["cors", "trace", "auth"] }
-sqlx = { version = "0.7", features = ["runtime-tokio-native-tls", "postgres", "uuid", "chrono"] }
-redis = { version = "0.23", features = ["tokio-comp", "json"] }
-jsonwebtoken = "9.0"
-argon2 = "0.5"
-oauth2 = "4.0"
+wasm-bindgen = "0.2"
+serde-wasm-bindgen = "0.4"
+web-sys = { version = "0.3", features = ["console", "Document", "Element", "HtmlElement", "Node"] }
+js-sys = "0.3"
 
 [profile.release]
+opt-level = "z"
 lto = true
 codegen-units = 1
-opt-level = 3
-
-[profile.dev]
-opt-level = 0
-debug = true

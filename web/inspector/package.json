@@ -1,0 +1,20 @@
+{
+  "name": "@chargemesh/inspector",
+  "version": "0.1.0",
+  "description": "ChargeMesh Web Inspector — Protocol debugging & diagnostics",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && npm run copy-wasm",
+    "copy-wasm": "cp ../../target/wasm32-unknown-unknown/release/chargemesh_wasm.wasm dist/",
+    "serve": "esbuild src/main.ts --bundle --outfile=dist/bundle.js --servedir=. --watch",
+    "dev": "npm run build && npm run serve",
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "@emerge/core": "^0.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "esbuild": "^0.19.0"
+  }
+}
