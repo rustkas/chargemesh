@@ -3,6 +3,7 @@ members = [
     "crates/chargemesh-core",
     "crates/chargemesh-ir",
     "crates/chargemesh-ocpp",
+    "crates/chargemesh-capability",
     "apps/chargemesh-cli",
 ]
 
@@ -11,6 +12,7 @@ members = [
 chargemesh-core = { path = "crates/chargemesh-core" }
 chargemesh-ir = { path = "crates/chargemesh-ir" }
 chargemesh-ocpp = { path = "crates/chargemesh-ocpp" }
+chargemesh-capability = { path = "crates/chargemesh-capability" }
 
 # Apps
 chargemesh-cli = { path = "apps/chargemesh-cli" }
@@ -32,6 +34,12 @@ tracing = "0.1"
 tracing-subscriber = "0.3"
 clap = { version = "4.0", features = ["derive"] }
 colored = "2.0"
+regex = "1.0"
+lazy_static = "1.4"
+
+# Rule Engine
+pest = "2.7"
+pest_derive = "2.7"
 
 [profile.release]
 lto = true

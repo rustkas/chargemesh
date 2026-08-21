@@ -1,0 +1,36 @@
+[package]
+name = "chargemesh-capability"
+version = "0.1.0"
+edition = "2021"
+authors = ["ChargeMesh Team"]
+description = "Capability Engine for ChargeMesh"
+license = "Apache-2.0"
+repository = "https://github.com/rustkas/chargemesh"
+
+[dependencies]
+chargemesh-core = { path = "../chargemesh-core" }
+chargemesh-ir = { path = "../chargemesh-ir" }
+chargemesh-ocpp = { path = "../chargemesh-ocpp" }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+
+# Utilities
+chrono = { workspace = true }
+uuid = { workspace = true }
+thiserror = { workspace = true }
+derive_more = { workspace = true }
+async-trait = { workspace = true }
+tracing = { workspace = true }
+regex = { workspace = true }
+lazy_static = { workspace = true }
+
+# Rule Engine
+pest = { workspace = true }
+pest_derive = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = "1.0"
+tokio = { workspace = true }

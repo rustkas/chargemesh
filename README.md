@@ -171,7 +171,7 @@ ChargeMesh is organized into several layers:
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                    PROTOCOL ADAPTER LAYER                                   │
 ├────────────┬────────────┬────────────┬────────────┬─────────────────────────┤
-│  OCPP 1.6  │ OCPP 2.0.1 │ OCPP 2.1  │ ISO 15118  │        OCPI              │
+│  OCPP 1.6  │ OCPP 2.0.1 │ OCPP 2.1   │ ISO 15118  │        OCPI             │
 └────────────┴────────────┴────────────┴────────────┴─────────────────────────┘
 ```
 
@@ -194,6 +194,11 @@ ChargeMesh uses **Rust** as its primary language for the core platform, with **E
 │                               │  ISO 15118 / V2G                           │
 │                               │  OCPI (roaming)                            │
 ├────────────────────────────────────────────────────────────────────────────┤
+│  CAPABILITY ENGINE            │  Multi-factor capability detection         │
+│                               │  Protocol │ Vendor │ Firmware │ Runtime    │
+│                               │  Rule-based evaluation                     │
+│                               │  Vendor profiles (ABB, Siemens)            │
+├────────────────────────────────────────────────────────────────────────────┤
 │  DATA LAYER                   │  PostgreSQL │ Redis │ NATS/Kafka           │
 ├────────────────────────────────────────────────────────────────────────────┤
 │  INFRASTRUCTURE               │  Docker │ Kubernetes │ Terraform           │
@@ -203,11 +208,9 @@ ChargeMesh uses **Rust** as its primary language for the core platform, with **E
 
 ### Web Frontend (Emerge Core)
 
-We use **`@emerge/core`** as the minimal reactive foundation:
-
 ```text
 ┌────────────────────────────────────────────────────────────────────────────┐
-│  FRONTEND (Emerge Core)        │  @emerge/core (signals, computed, effects)│
+│  FRONTEND (Emerge Core)       │  @emerge/core (signals, computed, effects) │
 │                               │  • signal() — reactive state               │
 │                               │  • computed() — lazy derived values        │
 │                               │  • effect() — scheduled side effects       │
@@ -218,26 +221,16 @@ We use **`@emerge/core`** as the minimal reactive foundation:
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Why Emerge Core?
+### Why Rust + Emerge Core?
 
 | Aspect | Benefit |
 |--------|---------|
-| **Minimal Surface** | Only signals, computed, effects, and ownership |
-| **Platform First** | Works with Web Platform, not against it |
-| **No Magic** | Reactive graph and lifetime are explainable |
-| **Lightweight** | No framework overhead, no Virtual DOM |
-| **Composable** | Easy to build higher-level abstractions |
-| **TypeScript** | Full type safety (optional for consumers) |
-
-### Why Rust + WASM?
-
-| Aspect | Benefit |
-|--------|---------|
-| **Protocol Analysis** | OCPP parsing runs natively in browser via WASM |
-| **Performance** | Near-native speed for protocol processing |
+| **Protocol Analysis** | OCPP parsing and capability detection run natively in browser via WASM |
+| **Performance** | Near-native speed for protocol processing and capability evaluation |
 | **Type Safety** | Full type safety across network boundaries |
 | **Code Reuse** | Same Rust code for backend and frontend |
 | **No JavaScript** | No runtime overhead for protocol logic |
+| **Capability Engine** | Multi-factor detection with rule-based evaluation |
 
 ---
 
@@ -250,6 +243,7 @@ ChargeMesh follows an open-core business model:
 │                         FREE / Open Source                                 │
 │  • Protocol libraries (OCPP 1.6, 2.0.1, 2.1)                               │
 │  • Universal EV Model (EV-IR)                                              │
+│  • Capability Engine                                                       │
 │  • Simulator                                                               │
 │  • Local diagnostics                                                       │
 │  • SDK (Rust)                                                              │
@@ -289,7 +283,7 @@ ChargeMesh follows an open-core business model:
 
 ## Project Status
 
-> **Early development — Phase 2 Complete**
+> **Early development — Phase 3 Complete**
 
 ChargeMesh is currently in active research and development. The APIs, EV-IR model, protocol adapters, and architecture are expected to evolve significantly.
 
@@ -310,7 +304,6 @@ ChargeMesh is currently in active research and development. The APIs, EV-IR mode
 | P1 | Core types (Power, Energy, Duration, etc.) | ✅ Complete |
 | P1 | EV-IR entities (16 entities) | ✅ Complete |
 | P1 | State machines (Session, Station, Connector) | ✅ Complete |
-| P1 | Unit tests | ✅ Complete |
 | **P2** | **OCPP 1.6 Core** | ✅ **Complete** |
 | P2 | OCPP 1.6 messages (13 messages) | ✅ Complete |
 | P2 | OCPP 1.6 parser | ✅ Complete |
@@ -319,14 +312,18 @@ ChargeMesh is currently in active research and development. The APIs, EV-IR mode
 | P2 | OCPP 1.6 state machine | ✅ Complete |
 | P2 | WebSocket utilities | ✅ Complete |
 | P2 | CLI tool (parse + capture) | ✅ Complete |
-| P2 | Integration tests | ✅ Complete |
-| P3 | OCPP 2.0.1 | 📋 Planned |
-| P3 | OCPP 2.1 | 📋 Planned |
+| **P3** | **Capability Engine** | ✅ **Complete** |
+| P3 | Capability detection (protocol, vendor, firmware, runtime) | ✅ Complete |
+| P3 | CapabilityRegistry with defaults | ✅ Complete |
+| P3 | Rule engine with conditions and actions | ✅ Complete |
+| P3 | Vendor profiles (ABB, Siemens) | ✅ Complete |
+| P3 | CLI command `capability` | ✅ Complete |
 | P4 | Simulator | 📋 Planned |
 | P5 | Diagnostics Engine | 📋 Planned |
 | P6 | Observability Platform | 📋 Planned |
 | P7 | Web Inspector (Emerge Core + WASM) | 📋 Planned |
 | P8 | OCPI + Energy Integration | 📋 Planned |
+| P9 | Cloud Platform | 📋 Planned |
 
 ---
 
@@ -355,54 +352,140 @@ chargemesh parse --file trace.ocpp --verbose
 # Capture traffic from a charger
 chargemesh capture --url ws://charger:9000 --output captured.ocpp --duration 30
 
+# Analyze capabilities of a charging station
+chargemesh capability --config station.json --format human --verbose
+
 # Show version
 chargemesh version
+```
+
+### Capability Configuration Example
+
+```json
+{
+  "station_id": "CP-001",
+  "vendor": {
+    "name": "ABB",
+    "id": "ABB",
+    "known_models": ["Terra 54", "Terra HP"]
+  },
+  "model": "Terra 54",
+  "firmware": {
+    "version": "2.1.0",
+    "build_date": "2024-01-15"
+  },
+  "protocol": {
+    "name": "OCPP",
+    "version": "2.0.1",
+    "transport": "WebSocket",
+    "security_profile": "TLS"
+  },
+  "configuration": {
+    "certificate_enabled": true,
+    "max_power": 50000
+  },
+  "runtime": {
+    "is_online": true,
+    "is_booted": true,
+    "active_sessions": 0,
+    "temperature": 35.0,
+    "load_percentage": 50
+  },
+  "hardware_version": "2.0",
+  "serial_number": "SN12345"
+}
+```
+
+### Capability Output Example
+
+```text
+═══════════════════════════════════════════════════════════
+  🔧 CAPABILITY REPORT
+═══════════════════════════════════════════════════════════
+
+📊 CAPABILITIES
+  • BasicCharging               ✅ Supported
+  • ConfigurationManagement     ✅ Supported
+  • OCPP1_6                     ✅ Supported
+  • OCPP2_0_1                   ✅ Supported
+  • OCPP2_1                     ❌ Not supported
+  • PlugAndCharge               ✅ Supported
+  • RemoteDiagnostics           ✅ Supported
+  • RemoteFirmwareUpdate        ✅ Supported
+  • RemoteReset                 ✅ Supported
+  • Reservation                 ✅ Supported
+  • RFIDAuthorization           ✅ Supported
+  • SmartCharging               ✅ Supported
+
+💡 SUMMARY
+  Total: 12
+  Supported: 10
+  Limited: 2
+
+═══════════════════════════════════════════════════════════
 ```
 
 ---
 
 ## Example
 
-### Backend: Connect to a charger and start a session
+### Backend: Analyze station capabilities
 
 ```rust
-use chargemesh_ir::prelude::*;
-use chargemesh_ocpp::v16::*;
-use chargemesh_core::*;
+use chargemesh_capability::*;
+use std::collections::HashMap;
 
 #[tokio::main]
-async fn main() -> Result<()> {
-    // Connect to a charging station via OCPP 1.6
-    let client = Ocpp16Client::connect("ws://charger:9000").await?;
-    
-    // Boot notification
-    let boot_resp = client.boot_notification("ABB", "Terra 54").await?;
-    println!("Boot status: {:?}", boot_resp.status);
-    
-    // Start a transaction
-    let auth_resp = client.authorize("RFID-123").await?;
-    let tx_resp = client.start_transaction(1, "RFID-123", 0).await?;
-    println!("Transaction ID: {}", tx_resp.transaction_id);
-    
-    // Send meter values
-    let meter = MeterValue {
-        timestamp: chrono::Utc::now(),
-        sampled_value: vec![SampledValue {
-            value: "10.5".to_string(),
-            context: Some(ReadingContext::SamplePeriodic),
-            format: None,
-            measurand: Some(Measurand::EnergyActiveImportRegister),
-            unit: Some(UnitOfMeasure::kWh),
-            location: None,
-        }],
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut config = HashMap::new();
+    config.insert("certificate_enabled".to_string(), serde_json::json!(true));
+
+    let context = CapabilityContext {
+        station_id: "CP-001".to_string(),
+        protocol: ProtocolInfo {
+            name: ProtocolName::OCPP,
+            version: "2.0.1".to_string(),
+            transport: "WebSocket".to_string(),
+            security_profile: "TLS".to_string(),
+        },
+        vendor: VendorInfo {
+            name: "ABB".to_string(),
+            id: Some("ABB".to_string()),
+            known_models: vec!["Terra 54".to_string()],
+        },
+        firmware: FirmwareInfo {
+            version: "2.1.0".to_string(),
+            build_date: Some("2024-01-15".to_string()),
+            checksum: None,
+            compatibility: vec![],
+        },
+        configuration: config,
+        runtime: RuntimeState {
+            is_online: true,
+            is_booted: true,
+            active_sessions: 0,
+            total_energy_delivered: 1000,
+            uptime_seconds: 3600,
+            temperature: Some(35.0),
+            load_percentage: Some(50),
+        },
+        model: "Terra 54".to_string(),
+        hardware_version: Some("2.0".to_string()),
+        serial_number: Some("SN12345".to_string()),
     };
-    client.meter_values(1, Some(tx_resp.transaction_id), vec![meter]).await?;
-    
-    // Stop transaction
-    client.stop_transaction(tx_resp.transaction_id, 1000, None, None).await?;
-    
-    client.close().await?;
-    
+
+    let engine = CapabilityEngine::new();
+    let capabilities = engine.determine_capabilities(&context).await?;
+
+    // Check if station supports smart charging
+    if capabilities.is_supported(&CapabilityType::SmartCharging) {
+        println!("✅ Station supports Smart Charging");
+    }
+
+    // Get capability details as JSON
+    let json = capabilities.to_json();
+    println!("{}", serde_json::to_string_pretty(&json)?);
+
     Ok(())
 }
 ```
@@ -420,30 +503,17 @@ import {
   runWithOwner,
 } from '@emerge/core';
 
-// Import WASM module
-import init, { parse_ocpp_message } from './wasm/chargemesh_wasm.js';
+// Import WASM modules
+import init, { parse_ocpp_message, analyze_capabilities } from './wasm/chargemesh_wasm.js';
 
 // Reactive state
 const trace = signal<ParsedMessage[]>([]);
+const capabilities = signal<CapabilitySet | null>(null);
 const selectedIndex = signal<number | null>(null);
-const filter = signal<string>('');
 
 // Computed: filtered messages
 const filteredMessages = computed(() => {
-  const query = filter.value.toLowerCase();
-  return trace.value.filter(msg => 
-    msg.action.toLowerCase().includes(query) ||
-    msg.id_tag?.toLowerCase().includes(query)
-  );
-});
-
-// Computed: session state machine
-const sessionState = computed(() => {
-  const sm = new Ocpp16Session();
-  for (const msg of trace.value) {
-    sm.process(msg);
-  }
-  return sm.state;
+  return trace.value;
 });
 
 // Effect: update DOM when trace changes
@@ -461,45 +531,47 @@ runWithOwner(owner, () => {
           <span class="content">${msg.action}</span>
         </div>
       `).join('');
-      
-      // Attach event listeners
-      container.querySelectorAll('.message').forEach(el => {
-        el.addEventListener('click', () => {
-          selectedIndex.value = parseInt(el.dataset.index!);
-        });
-      });
     }
   });
 });
 
-// Effect: update state machine display
+// Effect: update capability display
 runWithOwner(owner, () => {
   effect(() => {
-    const state = sessionState.value;
-    const el = document.getElementById('state');
-    if (el) {
-      el.textContent = `Current State: ${state}`;
+    const caps = capabilities.value;
+    const container = document.getElementById('capabilities');
+    if (container && caps) {
+      container.innerHTML = Object.entries(caps).map(([key, value]) => `
+        <div class="capability ${value.supported ? 'supported' : 'unsupported'}">
+          <span class="name">${key}</span>
+          <span class="status">${value.supported ? '✅' : '❌'}</span>
+        </div>
+      `).join('');
     }
   });
 });
 
-// Load trace file
+// Load trace file and analyze capabilities
 document.getElementById('load-btn')?.addEventListener('click', async () => {
   const file = (document.getElementById('file-input') as HTMLInputElement).files?.[0];
   if (!file) return;
-  
+
   const content = await file.text();
   const lines = content.split('\n');
   const parsed: ParsedMessage[] = [];
-  
+
   for (const line of lines) {
     if (line.trim()) {
       const msg = parse_ocpp_message(line);
       if (msg) parsed.push(msg);
     }
   }
-  
+
   trace.value = parsed;
+
+  // Analyze capabilities from the trace
+  const caps = analyze_capabilities(parsed);
+  capabilities.value = caps;
 });
 
 // Initialize WASM
@@ -511,7 +583,7 @@ window.addEventListener('beforeunload', () => {
 });
 ```
 
-### Custom Element for OCPP Inspector
+### Custom Element for OCPP Inspector with Capability Display
 
 ```typescript
 // web/inspector/src/components/ocpp-inspector.ts
@@ -521,44 +593,42 @@ import { signal, effect, createOwner, runWithOwner } from '@emerge/core';
 class OcppInspector extends HTMLElement {
   private owner = createOwner();
   private trace = signal<ParsedMessage[]>([]);
-  
+  private capabilities = signal<CapabilitySet | null>(null);
+
   connectedCallback() {
     this.render();
     this.setupEffects();
   }
-  
+
   disconnectedCallback() {
     this.owner.dispose();
   }
-  
+
   private render() {
     this.innerHTML = `
       <div class="inspector">
         <header>
           <h1>⚡ OCPP Inspector</h1>
-          <input type="file" id="load-trace" accept=".ocpp,.txt">
+          <div class="actions">
+            <input type="file" id="load-trace" accept=".ocpp,.txt">
+            <button id="analyze-btn">🔍 Analyze Capabilities</button>
+          </div>
         </header>
         <main>
-          <div id="timeline"></div>
-          <div id="state"></div>
+          <div class="panels">
+            <div class="panel" id="timeline-panel">
+              <h2>📊 Timeline</h2>
+              <div id="timeline"></div>
+            </div>
+            <div class="panel" id="capability-panel">
+              <h2>🔧 Capabilities</h2>
+              <div id="capabilities"></div>
+            </div>
+          </div>
         </main>
       </div>
     `;
-  }
-  
-  private setupEffects() {
-    runWithOwner(this.owner, () => {
-      effect(() => {
-        const messages = this.trace.value;
-        const container = this.querySelector('#timeline');
-        if (container) {
-          container.innerHTML = messages.map(m => 
-            `<div>${m.timestamp} ${m.action}</div>`
-          ).join('');
-        }
-      });
-    });
-    
+
     // File load handler
     this.querySelector('#load-trace')?.addEventListener('change', async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
@@ -567,13 +637,44 @@ class OcppInspector extends HTMLElement {
         // Parse and update trace
       }
     });
+
+    // Analyze button handler
+    this.querySelector('#analyze-btn')?.addEventListener('click', async () => {
+      // Use WASM to analyze capabilities from current trace
+    });
+  }
+
+  private setupEffects() {
+    runWithOwner(this.owner, () => {
+      effect(() => {
+        const messages = this.trace.value;
+        const container = this.querySelector('#timeline');
+        if (container) {
+          container.innerHTML = messages.map(m =>
+            `<div>${m.timestamp} ${m.action}</div>`
+          ).join('');
+        }
+      });
+    });
+
+    runWithOwner(this.owner, () => {
+      effect(() => {
+        const caps = this.capabilities.value;
+        const container = this.querySelector('#capabilities');
+        if (container && caps) {
+          container.innerHTML = Object.entries(caps).map(([key, value]) =>
+            `<div class="cap ${value.supported ? 'ok' : 'fail'}">
+              ${key}: ${value.supported ? '✅' : '❌'}
+            </div>`
+          ).join('');
+        }
+      });
+    });
   }
 }
 
 customElements.define('ocpp-inspector', OcppInspector);
 ```
-
-The application does not need to know whether the underlying device uses OCPP 1.6, OCPP 2.0.1, OCPP 2.1, or a vendor-specific implementation.
 
 ---
 
@@ -593,20 +694,105 @@ chargemesh/
 │   └── error-taxonomy.md                      # Error taxonomy (ChargeX MREC)
 ├── crates/
 │   ├── chargemesh-core/                       # Core types & utilities
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       ├── lib.rs
+│   │       ├── types.rs                       # Power, Energy, Duration, etc.
+│   │       ├── error.rs                       # CoreError, CoreResult
+│   │       ├── ident.rs                       # Id, StationId, EvseId, etc.
+│   │       ├── time.rs                        # Timestamp, TimeRange
+│   │       ├── crypto.rs                      # SHA256Hash, generate_token
+│   │       └── config.rs                      # Configuration utilities
+│   │
 │   ├── chargemesh-ir/                         # EV-IR model
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       ├── lib.rs
+│   │       ├── network.rs                     # ChargingNetwork
+│   │       ├── station.rs                     # ChargingStation
+│   │       ├── evse.rs                        # EVSE
+│   │       ├── connector.rs                   # Connector
+│   │       ├── vehicle.rs                     # Vehicle
+│   │       ├── session.rs                     # ChargingSession
+│   │       ├── transaction.rs                 # Transaction
+│   │       ├── meter.rs                       # Meter, MeterValue
+│   │       ├── tariff.rs                      # Tariff
+│   │       ├── authorization.rs               # Authorization
+│   │       ├── reservation.rs                 # Reservation
+│   │       ├── profile.rs                     # ChargingProfile
+│   │       ├── capability.rs                  # Capabilities
+│   │       ├── error.rs                       # ChargingError (ChargeX)
+│   │       ├── firmware.rs                    # Firmware
+│   │       ├── energy.rs                      # EnergyConstraint
+│   │       └── state_machine/                 # State machines
+│   │           ├── mod.rs
+│   │           ├── session.rs                 # SessionStateMachine
+│   │           ├── station.rs                 # StationStateMachine
+│   │           └── connector.rs               # ConnectorStateMachine
+│   │
 │   ├── chargemesh-ocpp/                       # OCPP Implementation
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       ├── lib.rs
+│   │       ├── common/
+│   │       │   ├── mod.rs
+│   │       │   ├── messages.rs
+│   │       │   ├── types.rs
+│   │       │   ├── errors.rs
+│   │       │   └── websocket.rs
+│   │       ├── v16/                           # OCPP 1.6
+│   │       │   ├── mod.rs
+│   │       │   ├── messages.rs                # All 13 messages
+│   │       │   ├── types.rs
+│   │       │   ├── parser.rs
+│   │       │   ├── client.rs
+│   │       │   ├── server.rs
+│   │       │   └── state_machine.rs
+│   │       ├── v201/                          # OCPP 2.0.1
+│   │       │   ├── mod.rs
+│   │       │   └── types.rs
+│   │       └── v21/                           # OCPP 2.1
+│   │           ├── mod.rs
+│   │           └── types.rs
+│   │
+│   ├── chargemesh-capability/                 # ⭐ Capability Engine
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       ├── lib.rs
+│   │       ├── engine/
+│   │       │   ├── mod.rs
+│   │       │   ├── capability.rs              # CapabilityDefinition, CapabilityState
+│   │       │   ├── resolver.rs                # Multi-factor resolution
+│   │       │   ├── registry.rs                # Capability registry
+│   │       │   └── evaluator.rs               # Rule-based evaluation
+│   │       ├── detectors/
+│   │       │   ├── mod.rs
+│   │       │   ├── protocol_detector.rs       # Protocol-based detection
+│   │       │   ├── vendor_detector.rs         # Vendor-based detection
+│   │       │   ├── firmware_detector.rs       # Firmware-based detection
+│   │       │   └── runtime_detector.rs        # Runtime-based detection
+│   │       ├── profiles/
+│   │       │   ├── mod.rs
+│   │       │   └── model_profiles.rs          # ABB, Siemens profiles
+│   │       └── rules/
+│   │           ├── mod.rs
+│   │           ├── engine.rs                  # Rule engine
+│   │           ├── conditions.rs              # Rule conditions
+│   │           └── actions.rs                 # Rule actions
+│   │
 │   └── chargemesh-wasm/                       # WASM module for web
 │       ├── Cargo.toml
 │       └── src/
 │           └── lib.rs                         # Exports for Emerge
+│
 ├── apps/
-│   ├── chargemesh-cli/                        # Command-line interface
-│   └── chargemesh-inspector/                  # Web Inspector
-│       ├── Cargo.toml                         # Rust backend for inspector
+│   └── chargemesh-cli/                        # Command-line interface
+│       ├── Cargo.toml
 │       └── src/
-│           └── main.rs                        # Axum server
+│           └── main.rs                        # Parse, Capture, Capability, Version
+│
 ├── web/
-│   └── inspector/                             # Frontend (Emerge Core)
+│   └── inspector/                             # Web Inspector (Emerge Core)
 │       ├── package.json
 │       ├── tsconfig.json
 │       ├── index.html
@@ -619,11 +805,22 @@ chargemesh/
 │       │       └── index.ts
 │       └── styles/
 │           └── main.css
+│
 ├── tests/
 │   ├── unit/
+│   │   └── core_tests.rs
 │   ├── integration/
+│   │   ├── ir_tests.rs
+│   │   ├── ocpp_tests.rs
+│   │   └── capability_tests.rs                # ⭐ Capability tests
 │   └── e2e/
+│       ├── ocpp_e2e_tests.rs
+│       └── capability_e2e_tests.rs            # ⭐ Capability E2E tests
+│
 └── examples/
+    ├── basic_connect.rs
+    ├── diagnose_trace.rs
+    └── capability_analysis.rs                  # ⭐ Capability example
 ```
 
 ---
@@ -635,8 +832,8 @@ chargemesh/
 - Rust stable toolchain (1.70+)
 - Cargo
 - Git
-- Node.js 18+ (for web inspector)
-- wasm-pack (for WASM compilation)
+- Node.js 18+ (for web inspector, Phase 7+)
+- wasm-pack (for WASM compilation, Phase 7+)
 
 ### Build
 
@@ -654,13 +851,10 @@ cargo build --release --workspace
 # Run tests
 cargo test --workspace
 
-# Build WASM for web
-wasm-pack build --target web crates/chargemesh-wasm
-
-# Build web inspector
-cd web/inspector
-npm install
-npm run build
+# Run specific tests
+cargo test -p chargemesh-ir
+cargo test -p chargemesh-ocpp
+cargo test -p chargemesh-capability
 
 # View project structure
 tree -L 3
@@ -681,6 +875,9 @@ chargemesh parse --file trace.ocpp --format json
 # Capture traffic
 chargemesh capture --url ws://charger:9000 --output captured.ocpp --duration 60
 
+# Analyze capabilities
+chargemesh capability --config station.json --format human --verbose
+
 # Show version
 chargemesh version
 ```
@@ -695,7 +892,7 @@ Applications should depend on the ChargeMesh model rather than individual chargi
 
 ### Capability-First Design
 
-The system should describe what a device can actually do, rather than assuming capabilities from its protocol version.
+The system should describe what a device can actually do, rather than assuming capabilities from its protocol version. This is the core of Phase 3.
 
 ### Explicit State Machines
 
@@ -775,8 +972,7 @@ ChargeMesh aims to become a common software infrastructure layer for EV charging
 | **P0** | Research & Specification | ✅ Complete |
 | **P1** | Universal EV Model (EV-IR) | ✅ Complete |
 | **P2** | OCPP 1.6 Core | ✅ Complete |
-| P3 | OCPP 2.0.1 | 📋 Planned |
-| P3 | OCPP 2.1 | 📋 Planned |
+| **P3** | Capability Engine | ✅ Complete |
 | P4 | Simulator | 📋 Planned |
 | P5 | Diagnostics Engine | 📋 Planned |
 | P6 | Observability Platform | 📋 Planned |
@@ -804,7 +1000,7 @@ Please open an issue before implementing a major architectural change.
 
 - OCPP 2.0.1 implementation
 - OCPP 2.1 implementation
-- Additional vendor profiles
+- Additional vendor profiles (Alfen, Tritium, etc.)
 - Simulator scenarios
 - Diagnostics rules
 - Documentation
@@ -870,10 +1066,17 @@ ChargeMesh builds upon the work of many standards bodies and open-source project
 - ✅ CLI tool (`parse` and `capture`)
 - ✅ Unit, integration, and E2E tests
 
+### Phase 3 (Complete)
+- ✅ `chargemesh-capability` — Capability Engine
+- ✅ Multi-factor detection (protocol, vendor, firmware, runtime)
+- ✅ CapabilityRegistry with defaults
+- ✅ Rule engine with conditions and actions
+- ✅ Vendor profiles (ABB, Siemens)
+- ✅ CLI command `capability`
+- ✅ Unit, integration, and E2E tests
+
 ### Next Steps
-- Phase 3: OCPP 2.0.1 and OCPP 2.1
 - Phase 4: Simulator
 - Phase 5: Diagnostics Engine
 - Phase 6: Observability Platform
 - Phase 7: Web Inspector with Emerge Core + WASM
-```
