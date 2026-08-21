@@ -7,6 +7,7 @@ members = [
     "crates/chargemesh-simulator",
     "crates/chargemesh-diagnostics",
     "crates/chargemesh-observability",
+    "crates/chargemesh-integration",
     "apps/chargemesh-cli",
 ]
 
@@ -19,6 +20,7 @@ chargemesh-capability = { path = "crates/chargemesh-capability" }
 chargemesh-simulator = { path = "crates/chargemesh-simulator" }
 chargemesh-diagnostics = { path = "crates/chargemesh-diagnostics" }
 chargemesh-observability = { path = "crates/chargemesh-observability" }
+chargemesh-integration = { path = "crates/chargemesh-integration" }
 
 # Apps
 chargemesh-cli = { path = "apps/chargemesh-cli" }
@@ -52,6 +54,11 @@ serde_html = "0.2"
 prometheus = "0.13"
 ratatui = "0.23"
 crossterm = "0.27"
+reqwest = { version = "0.11", features = ["json"] }
+axum = { version = "0.6", features = ["ws"] }
+tower = "0.4"
+tower-http = { version = "0.4", features = ["cors", "trace", "auth"] }
+lp_solver = "0.2"
 
 [profile.release]
 lto = true
